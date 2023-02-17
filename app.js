@@ -44,7 +44,7 @@ async function getCommand(testPath, testMethod, runnerJarPath) {
     const configurationTypeName = configurationTypeValue.data[0].name
     const urlRepo = test.data[0].sc_repo_url_udf
     const branchName = test.data[0].sc_branch_udf
-    const folderName = urlRepo.substring(urlRepo.lastIndexOf("/") + 1, urlRepo.indexOf(".git"))
+    const folderName = urlRepo.substring(urlRepo.lastIndexOf("/") + 1)
 
     createClasspathFolder(urlRepo, branchName, folderName)
     const projectPath = test.data[0].sc_project_path_udf;
