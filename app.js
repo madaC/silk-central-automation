@@ -22,7 +22,7 @@ async function getOctaneTest(testPath, testMethod) {
                 const testClass = testPath.substring(testPath.lastIndexOf('.') + 1, testPath.length)
                 query = Query.field('name').equal(testMethod).and(Query.field('class_name').equal(testClass)).and(Query.field('package').equal(testPackage)).and(Query.field('component').equal(Query.NULL))
             } else {
-                query = Query.field('name').equal(testMethod).and(Query.field('class_name').equal(testPath)).and(Query.field('package').equal(Query.Query.NULL)).and(Query.field('component').equal(Query.NULL))
+                query = Query.field('name').equal(testMethod).and(Query.field('class_name').equal(testPath)).and(Query.field('package').equal(Query.NULL)).and(Query.field('component').equal(Query.NULL))
             }
         } else {
             query = Query.field('name').equal(testMethod).and(Query.field('class_name').equal(Query.NULL)).and(Query.field('package').equal(Query.NULL)).and(Query.field('component').equal(Query.NULL))
