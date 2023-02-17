@@ -49,7 +49,7 @@ async function getCommand(testPath, testMethod, runnerJarPath) {
     createClasspathFolder(urlRepo, branchName, folderName)
     const projectPath = test.data[0].sc_project_path_udf;
     const classpath = test.data[0].sc_classpath_udf
-    const rootClasspath = './' + folderName + projectPath;
+    const rootClasspath = './' + folderName;
     const lastIndexOfUnderline = testMethod.lastIndexOf("_")
 
     const jars = classpath.split(';')
