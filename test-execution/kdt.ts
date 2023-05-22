@@ -47,7 +47,7 @@ const getCommand = async (
         Number.parseInt(keywordsJsonAttachment.id)
     );
     const rootWorkingFolder = getRootWorkingFolder(test);
-    fs.mkdirSync(rootWorkingFolder);
+    fs.mkdirSync(rootWorkingFolder, { recursive: true });
     fs.writeFileSync(
         `${rootWorkingFolder}/keywords.json`,
         JSON.stringify(
@@ -100,6 +100,8 @@ const generateExecutableFile = async (
 };
 
 const getJavaLibraryPath = (): string => {
+    console.log("Open agent home.....")
+    console.log(process.env.OPEN_AGENT_HOME)
     const silkTestKDTPath =
         process.env.OPEN_AGENT_HOME + path.sep + 'KeywordDrivenTesting';
 
