@@ -32,14 +32,16 @@ import { getAbsoluteClasspath } from './utils/classpath.js';
 import {
     cleanUpWorkingFiles,
     EXECUTABLE_FILE,
+    getEnvironmentVariables,
     getRootWorkingFolder,
     replaceParametersFromCSV,
+    replaceParamsValuesInJunitTest,
     replaceParamsValuesInNunitTest,
     TEST_RESULT_FILE
 } from './utils/files.js';
 import OctaneAttachment from './model/octane/octaneAttachment';
-import csv from "csvtojson";
-import it from "node:test";
+import csv from 'csvtojson';
+import it from 'node:test';
 
 const NUNIT3_CONSOLE = 'nunit3-console.exe';
 
@@ -135,25 +137,60 @@ const getExecutableFile = async (
         const test = await getNunitOctaneTestByName(testName);
         validateOctaneTest(test, testName);
         const testAttachmentsIds = getAttachmentIds(test.attachments!);
-        const csvParametersAttachment: OctaneAttachment =
+        const csvParametersAttachment: OctaneAttachment | undefined =
             await getAttachmentFromIdsByName(
                 testAttachmentsIds,
                 'SC_parameters.csv'
             );
-        const csvParametersAttachmentContent = await getAttachmentContentById(
-            Number.parseInt(csvParametersAttachment.id)
-        );
-        let iterations: { [key: string]: string }[] = (await csv().fromString(csvParametersAttachmentContent.toString()));
-        const iterationsParams = await replaceParametersFromCSV(iterations);
-        for (const iteration of iterationsParams) {
-            const testWithParams = replaceParamsValuesInNunitTest(
-                iteration,
+
+        const environmentParams = getEnvironmentVariables();
+        if (csvParametersAttachment) {
+            const csvParametersAttachmentContent =
+                await getAttachmentContentById(
+                    Number.parseInt(csvParametersAttachment!.id)
+                );
+            let iterations: { [key: string]: string }[] =
+                await csv().fromString(
+                    csvParametersAttachmentContent.toString()
+                );
+            const iterationsParams = await replaceParametersFromCSV(
+                iterations,
+                environmentParams
+            );
+            for (const iteration of iterationsParams) {
+                const testWithParams = replaceParamsValuesInNunitTest(
+                    iteration,
+                    environmentParams,
+                    test
+                );
+                const timestamp = Date.now();
+                const command = await createCommand(
+                    nunitDirectories,
+                    testWithParams,
+                    timestamp,
+                    githubCredentials
+                );
+                fs.appendFileSync(EXECUTABLE_FILE, command + '\n');
+                const javaCommand = getJavaCommand(
+                    testName,
+                    runnerJarPath,
+                    timestamp
+                );
+                fs.appendFileSync(
+                    './java_command_to_execute.bat',
+                    javaCommand + '\n'
+                );
+            }
+        } else {
+            const testWithEnvParams = replaceParamsValuesInNunitTest(
+                { '': '' },
+                environmentParams,
                 test
             );
             const timestamp = Date.now();
             const command = await createCommand(
                 nunitDirectories,
-                testWithParams,
+                testWithEnvParams,
                 timestamp,
                 githubCredentials
             );

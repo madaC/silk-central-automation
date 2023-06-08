@@ -29,10 +29,10 @@ import SourceControlProfile from './model/silk/sourceControlProfile';
 import {
     cleanUpWorkingFiles,
     EXECUTABLE_FILE,
+    getEnvironmentVariables,
     getRootWorkingFolder,
     replaceParametersFromCSV,
-    replaceParamsValuesInJunitTest,
-    replaceParamsValuesInNunitTest
+    replaceParamsValuesInJunitTest
 } from './utils/files.js';
 import { getAbsoluteClasspath } from './utils/classpath.js';
 import OctaneApplicationModule from './model/octane/octaneApplicationModule';
@@ -45,6 +45,7 @@ const getCommand = async (
     runnerJarPath: string,
     test: OctaneTest,
     paramsForCommand: string,
+    isLastIteration?: boolean,
     credentials?: Credentials
 ): Promise<string> => {
     const assignedAppModulesIds = getApplicationModuleIds(
@@ -88,7 +89,8 @@ const getCommand = async (
         classNames,
         absoluteClasspath,
         runnerJarPath,
-        paramsForCommand
+        paramsForCommand,
+        isLastIteration
     );
 };
 
@@ -98,15 +100,22 @@ const createCommand = (
     classNames: string | null | undefined,
     absoluteClasspath: string,
     runnerJarPath: string,
-    paramsForCommand: string
+    paramsForCommand: string,
+    isLastIteration?: boolean
 ): string => {
     let command;
     if (!methodName && !classNames) {
-        command = `java -cp "${absoluteClasspath};${runnerJarPath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper RunMeAsAJar null ${octaneTestName}`;
+        command = `java -cp "${absoluteClasspath};${runnerJarPath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper RunMeAsAJar null ${octaneTestName} ${
+            isLastIteration ?? ''
+        }`;
     } else if (!methodName && classNames && classNames.split(' ').length > 0) {
-        command = `java -cp "${absoluteClasspath};${runnerJarPath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper "${classNames}" null ${octaneTestName}`;
+        command = `java -cp "${absoluteClasspath};${runnerJarPath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper "${classNames}" null ${octaneTestName} ${
+            isLastIteration ?? ''
+        }`;
     } else if (methodName && classNames && classNames.split(' ').length > 0) {
-        command = `java -cp "${absoluteClasspath};${runnerJarPath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper "${classNames}" ${methodName} ${octaneTestName}`;
+        command = `java -cp "${absoluteClasspath};${runnerJarPath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper "${classNames}" ${methodName} ${octaneTestName} ${
+            isLastIteration ?? ''
+        }`;
     } else {
         throw new Error(
             'Could not create execution command for Octane automated test of type JUnit with name' +
@@ -120,7 +129,7 @@ const createCommand = (
 const generateExecutableFile = async (
     testsToRun: string,
     runnerJarPath: string,
-    githubCredentials?: Credentials
+    credentials?: Credentials
 ): Promise<void> => {
     cleanUpWorkingFiles();
 
@@ -129,39 +138,78 @@ const generateExecutableFile = async (
         const test = await getJunitOctaneTestByName(testName);
         validateOctaneJUnitTest(test, testName);
         const testAttachmentsIds = getAttachmentIds(test.attachments!);
-        const csvParametersAttachment: OctaneAttachment =
+        const csvParametersAttachment: OctaneAttachment | undefined =
             await getAttachmentFromIdsByName(
                 testAttachmentsIds,
                 'SC_parameters.csv'
             );
-        const csvParametersAttachmentContent = await getAttachmentContentById(
-            Number.parseInt(csvParametersAttachment.id)
-        );
-        let iterations: { [key: string]: string }[] = await csv().fromString(
-            csvParametersAttachmentContent.toString()
-        );
+        const environmentParams = getEnvironmentVariables();
 
-        for (const iteration of iterations) {
-            let parametersForCommand = '';
-            for (let param in iteration) {
-                parametersForCommand = `${parametersForCommand} "-D${param}=${iteration[param]}"`;
+        if (csvParametersAttachment) {
+            const csvParametersAttachmentContent =
+                await getAttachmentContentById(
+                    Number.parseInt(csvParametersAttachment!.id)
+                );
+
+            let iterations: { [key: string]: string }[] =
+                await csv().fromString(
+                    csvParametersAttachmentContent.toString()
+                );
+
+            for (const iteration of iterations) {
+                let parametersForCommand = '';
+                for (let param in iteration) {
+                    parametersForCommand = `${parametersForCommand} "-D${param}=${iteration[param]}"`;
+                }
+                iteration['parametersForJavaCommand'] = parametersForCommand;
             }
-            iteration['parametersForJavaCommand'] = parametersForCommand;
-        }
 
-        const iterationsParams = await replaceParametersFromCSV(iterations);
-        for (const iteration of iterationsParams) {
-            const testWithParams = replaceParamsValuesInJunitTest(
-                iteration,
+            const iterationsWithReplacedParams = await replaceParametersFromCSV(
+                iterations,
+                environmentParams
+            );
+            for (let i = 0; i < iterationsWithReplacedParams.length; i++) {
+                const iteration = iterationsWithReplacedParams[i];
+                const testWithParams = replaceParamsValuesInJunitTest(
+                    iteration,
+                    environmentParams,
+                    test
+                );
+
+                let isLastIteration: boolean | undefined;
+                if (iterationsWithReplacedParams.length > 1) {
+                    if (i == iterationsWithReplacedParams.length - 1) {
+                        isLastIteration = true;
+                    } else {
+                        isLastIteration = false;
+                    }
+                }
+                const command = await getCommand(
+                    testName,
+                    runnerJarPath,
+                    testWithParams,
+                    iteration['parametersForJavaCommand'],
+                    isLastIteration,
+                    credentials
+                );
+
+                fs.appendFileSync(EXECUTABLE_FILE, command + '\n');
+            }
+        } else {
+            const testWithEnvParams = replaceParamsValuesInJunitTest(
+                { '': '' },
+                environmentParams,
                 test
             );
             const command = await getCommand(
                 testName,
                 runnerJarPath,
-                testWithParams,
-                iteration['parametersForJavaCommand'],
-                githubCredentials
+                testWithEnvParams,
+                '',
+                undefined,
+                credentials
             );
+
             fs.appendFileSync(EXECUTABLE_FILE, command + '\n');
         }
     }
