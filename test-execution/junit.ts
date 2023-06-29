@@ -28,7 +28,7 @@ import {
     getEnvironmentVariables,
     getTestParameters,
     getRootWorkingFolder, getTestNames,
-    replaceParametersFromCSV,
+    replaceParametersReferences,
     replaceParamsValuesInJunitTest
 } from './utils/files.js';
 import { getAbsoluteClasspath } from './utils/classpath.js';
@@ -131,19 +131,19 @@ const generateExecutableFile = async (
                 testContainerAppModule.sc_source_control_udf
             );
         const environmentParams = getEnvironmentVariables();
-        let iterations: { [key: string]: string }[] = await getTestParameters(test, testContainerAppModule, suiteId,
+        let parameters: { [key: string]: string }[] = await getTestParameters(test, testContainerAppModule, suiteId,
             suiteRunId, sourceControlProfile);
 
-        for (const iteration of iterations) {
+        for (const parameterRow of parameters) {
             let parametersForCommand = '';
-            for (let param in iteration) {
-                parametersForCommand = `${parametersForCommand} "-D${param}=${iteration[param]}"`;
+            for (let param in parameterRow) {
+                parametersForCommand = `${parametersForCommand} "-D${param}=${parameterRow[param]}"`;
             }
-            iteration['parametersForJavaCommand'] = parametersForCommand;
+            parameterRow['parametersForJavaCommand'] = parametersForCommand;
         }
 
-        const iterationsWithReplacedParams = await replaceParametersFromCSV(
-            iterations,
+        const iterationsWithReplacedParams = await replaceParametersReferences(
+            parameters,
             environmentParams
         );
 
