@@ -203,11 +203,11 @@ const deserializeSourceControlDetails = (
     name: string
 ): SourceControlProfile | undefined => {
     const sourceControlProfile = JSON.parse(name);
-    switch (sourceControlProfile.pluginClass) {
+    switch (sourceControlProfile.Type) {
         case 'Git':
             return new GitProfile(
                 sourceControlProfile.ProfileName,
-                sourceControlProfile.pluginClass,
+                sourceControlProfile.Type,
                 sourceControlProfile.RootNode,
                 sourceControlProfile.projectpath,
                 sourceControlProfile.branch,
@@ -216,7 +216,7 @@ const deserializeSourceControlDetails = (
         case 'Subversion':
             return new SubversionProfile(
                 sourceControlProfile.ProfileName,
-                sourceControlProfile.pluginClass,
+                sourceControlProfile.Type,
                 sourceControlProfile.RootNode,
                 sourceControlProfile.projectpath,
                 sourceControlProfile.url
@@ -224,14 +224,14 @@ const deserializeSourceControlDetails = (
         case 'UNC':
             return new UNCProfile(
                 sourceControlProfile.ProfileName,
-                sourceControlProfile.pluginClass,
+                sourceControlProfile.Type,
                 sourceControlProfile.path,
                 sourceControlProfile.RootNode
             );
         case 'VFS':
             return new VFSProfile(
                 sourceControlProfile.ProfileName,
-                sourceControlProfile.pluginClass,
+                sourceControlProfile.Type,
                 sourceControlProfile.RootNode,
                 sourceControlProfile.projectpath,
                 sourceControlProfile.url

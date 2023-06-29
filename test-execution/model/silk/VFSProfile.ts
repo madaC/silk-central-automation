@@ -27,12 +27,12 @@ export default class VFSProfile extends SourceControlProfile {
 
     constructor(
         name: string,
-        pluginClass: string,
+        type: string,
         rootNode: string,
         projectPath: string,
         url: string
     ) {
-        super(name, pluginClass, rootNode);
+        super(name, type, rootNode);
         this._projectPath = projectPath;
         this._url = url;
     }

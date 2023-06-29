@@ -23,11 +23,11 @@ export default class UNCProfile extends SourceControlProfile {
 
     constructor(
         name: string,
-        pluginClass: string,
+        type: string,
         UNCPath: string,
         rootNode: string
     ) {
-        super(name, pluginClass, rootNode);
+        super(name, type, rootNode);
         this.UNCPath = UNCPath;
     }
 

@@ -27,13 +27,13 @@ export default class GitProfile extends SourceControlProfile {
 
     constructor(
         name: string,
-        pluginClass: string,
+        type: string,
         rootNode: string,
         projectPath: string,
         branch: string,
         url: string
     ) {
-        super(name, pluginClass, rootNode);
+        super(name, type, rootNode);
         this._projectPath = projectPath;
         this.branch = branch;
         this._url = url;
