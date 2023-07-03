@@ -28,7 +28,7 @@ import {
     getEnvironmentVariables,
     getTestParameters,
     getRootWorkingFolder, getTestNames,
-    replaceParametersReferences,
+    replaceParametersFromCSV,
     replaceParamsValuesInJunitTest
 } from './utils/files.js';
 import { getAbsoluteClasspath } from './utils/classpath.js';
@@ -97,7 +97,7 @@ const createCommand = (
             isLastIteration ?? ''
         }`;
     } else if (methodName && classNames && classNames.split(' ').length > 0) {
-        command = `java -cp "${absoluteClasspath};${runnerJarPath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper "${classNames}" "${methodName}" ${octaneTestName} ${
+        command = `java -cp "${absoluteClasspath};${runnerJarPath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper "${classNames}" ${methodName} ${octaneTestName} ${
             isLastIteration ?? ''
         }`;
     } else {
@@ -131,19 +131,19 @@ const generateExecutableFile = async (
                 testContainerAppModule.sc_source_control_udf
             );
         const environmentParams = getEnvironmentVariables();
-        let parameters: { [key: string]: string }[] = await getTestParameters(test, testContainerAppModule, suiteId,
+        let iterations: { [key: string]: string }[] = await getTestParameters(test, testContainerAppModule, suiteId,
             suiteRunId, sourceControlProfile);
 
-        for (const parameterRow of parameters) {
+        for (const iteration of iterations) {
             let parametersForCommand = '';
-            for (let param in parameterRow) {
-                parametersForCommand = `${parametersForCommand} "-D${param}=${parameterRow[param]}"`;
+            for (let param in iteration) {
+                parametersForCommand = `${parametersForCommand} "-D${param}=${iteration[param]}"`;
             }
-            parameterRow['parametersForJavaCommand'] = parametersForCommand;
+            iteration['parametersForJavaCommand'] = parametersForCommand;
         }
 
-        const iterationsWithReplacedParams = await replaceParametersReferences(
-            parameters,
+        const iterationsWithReplacedParams = await replaceParametersFromCSV(
+            iterations,
             environmentParams
         );
 
