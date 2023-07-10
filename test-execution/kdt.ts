@@ -74,7 +74,7 @@ const getCommand = async (
     const dependenciesAbsolutePath = path.resolve('dependencies');
 
     //this should always be in one line
-    return `java -cp "${runnerJarPath};${dependenciesAbsolutePath}${path.sep}*" ${getJavaLibraryPath()} com.microfocus.adm.almoctane.migration.plugin_silk_central.kdt.EngineWrapper ${absoluteRootWorkingFolder} ${octaneTestName}`;
+    return `java -cp "${runnerJarPath};${dependenciesAbsolutePath}${path.sep}*" ${getJavaLibraryPath()} com.microfocus.adm.almoctane.migration.plugin_silk_central.kdt.EngineWrapper "${absoluteRootWorkingFolder}" ${octaneTestName}`;
 };
 
 const generateExecutableFile = async (
@@ -113,6 +113,11 @@ const generateExecutableFile = async (
         for (let i = 0; i < iterations.length; i++) {
             if (iterations.length > 1) {
                 isLastIteration = i == iterations.length - 1;
+            }
+            if (iterations.length > 1) {
+                fs.appendFileSync(EXECUTABLE_FILE,`set #sctm_test_results_dir=${path.resolve(`execution_files/${i} (${test.name})`)}\n`);
+            } else {
+                fs.appendFileSync(EXECUTABLE_FILE, `set #sctm_test_results_dir=${path.resolve(`execution_files/${test.name}`)}\n`);
             }
             fs.appendFileSync(EXECUTABLE_FILE, `${command} ${iterations.length > 1 ? i : ''} ${isLastIteration ?? ''}` + '\n');
         }
