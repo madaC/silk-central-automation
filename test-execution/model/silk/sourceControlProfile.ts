@@ -17,7 +17,7 @@ import Credentials from '../credentials';
 
 export default abstract class SourceControlProfile {
     protected name: string;
-    protected pluginClass?: string;
+    protected Type?: string;
     protected _rootNode?: string;
 
     abstract createClasspathFolder(
@@ -29,7 +29,7 @@ export default abstract class SourceControlProfile {
 
     protected constructor(name: string, pluginClass: string, rootNode: string) {
         this.name = name;
-        this.pluginClass = pluginClass;
+        this.Type = pluginClass;
         this._rootNode = rootNode;
     }
 

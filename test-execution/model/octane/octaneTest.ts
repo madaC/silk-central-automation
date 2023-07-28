@@ -19,12 +19,19 @@ import OctaneAttachment from "./octaneAttachment";
 export default interface OctaneTest {
     id: string;
     name: string;
+    source_id_udf?: string;
+    external_test_id?: string;
     sc_class_names_udf?: string;
     sc_method_name_udf?: string;
     sc_classpath_udf?: string;
     sc_nunit_options_udf?: string;
     sc_nunit_assembly_udf?: string;
     sc_nunit_directory_udf?: string;
+    sc_enable_data_driven_udf?: boolean;
     application_modules?: OctaneApplicationModule[];
     attachments?: OctaneAttachment[];
+    sc_executable_name_udf?: string,
+    sc_argument_list_udf?: string,
+    sc_working_folder_udf?: string,
+    sc_junit_result_udf?: string
 }

@@ -19,5 +19,6 @@ export default interface OctaneApplicationModule {
     id: string;
     name: string;
     sc_source_control_udf: string;
+    sc_product_name_udf? : string;
     attachments?: OctaneAttachment[];
 }

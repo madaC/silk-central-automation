@@ -23,6 +23,8 @@ import UNCProfile from '../model/silk/UNCProfile.js';
 import VFSProfile from '../model/silk/VFSProfile.js';
 import OctaneApplicationModule from '../model/octane/octaneApplicationModule';
 import OctaneAttachment from '../model/octane/octaneAttachment';
+import OctaneListNode from '../model/octane/octaneListNode';
+import OctaneTestSuite from '../model/octane/octaneTestSuite';
 
 const properties = PropertiesReader('./octane-details.properties');
 const octane = new Octane({
@@ -47,11 +49,13 @@ const getJunitOctaneTestByName = async (
         .get(Octane.entityTypes.tests)
         .fields(
             'name',
+            'external_test_id',
             'sc_class_names_udf',
             'sc_method_name_udf',
             'sc_classpath_udf',
             'application_modules',
-            'attachments'
+            'attachments',
+            'sc_enable_data_driven_udf'
         )
         .query(query.build())
         .execute();
@@ -79,7 +83,13 @@ const getOctaneKDTByName = async (testName: string): Promise<OctaneTest> => {
         .and(Query.field('component').equal(Query.NULL));
     const octaneResponse = await octane
         .get(Octane.entityTypes.tests)
-        .fields('name', 'attachments', 'application_modules')
+        .fields(
+            'name',
+            'external_test_id',
+            'attachments',
+            'application_modules',
+            'sc_enable_data_driven_udf'
+        )
         .query(query.build())
         .execute();
     if (octaneResponse.data[0] === undefined) {
@@ -98,12 +108,64 @@ const getOctaneKDTByName = async (testName: string): Promise<OctaneTest> => {
     };
 };
 
-const getAppModuleFromIdsBySourceType = async (
-    applicationModuleIds: string[],
+const getOctaneProcessExecutorByName = async (
+    testName: string
+): Promise<OctaneTest> => {
+    const query = Query.field('name')
+        .equal(testName)
+        .and(Query.field('class_name').equal(Query.NULL))
+        .and(Query.field('package').equal(Query.NULL))
+        .and(Query.field('component').equal(Query.NULL));
+    const octaneResponse = await octane
+        .get(Octane.entityTypes.tests)
+        .fields(
+            'name',
+            'sc_executable_name_udf',
+            'external_test_id',
+            'sc_argument_list_udf',
+            'sc_working_folder_udf',
+            'sc_junit_result_udf',
+            'sc_enable_data_driven_udf',
+            'attachments',
+            'application_modules'
+        )
+        .query(query.build())
+        .execute();
+    if (octaneResponse.data[0] === undefined) {
+        throw new Error(
+            `Not found! Automated test with name ${testName} does not exist in Octane.`
+        );
+    }
+    return <OctaneTest>{
+        ...octaneResponse.data[0],
+        attachments: <OctaneAttachment[]>(
+            octaneResponse.data[0].attachments.data
+        ),
+        application_modules: <OctaneApplicationModule[]>(
+            octaneResponse.data[0].application_modules.data
+        )
+    };
+};
+
+const getAppModuleBySourceType = async (
+    test: OctaneTest,
     sourceType: string
 ): Promise<OctaneApplicationModule> => {
+    if (!Array.isArray(test.application_modules) || !test.application_modules.length) {
+        throw new Error(
+            `Octane test with name ${test.name} does not have any application modules assigned`
+        );
+    }
+    const assignedAppModuleIds = getApplicationModuleIds(
+        test.application_modules
+    );
+    if (assignedAppModuleIds.length == 0) {
+        throw new Error(
+            `Octane test with name ${test.name} does not have any application modules assigned`
+        );
+    }
     const query = Query.field('id')
-        .inComparison(applicationModuleIds)
+        .inComparison(assignedAppModuleIds)
         .and(Query.field('source_type_udf').equal(sourceType));
     const octaneResponse = await octane
         .get(Octane.entityTypes.applicationModules)
@@ -112,13 +174,14 @@ const getAppModuleFromIdsBySourceType = async (
             'name',
             'source_type_udf',
             'sc_source_control_udf',
+            'sc_product_name_udf',
             'attachments'
         )
         .query(query.build())
         .execute();
     if (octaneResponse.data[0] === undefined) {
         throw new Error(
-            `Entity of type "application_module" with source type_ "${sourceType}" having the id among ids list {${applicationModuleIds}} can not be found in Octane.`
+            `Entity of type "application_module" with source type_ "${sourceType}" having the id among ids list {${assignedAppModuleIds}} can not be found in Octane.`
         );
     }
     return <OctaneApplicationModule>{
@@ -145,10 +208,15 @@ const getAttachmentIds = (attachments: OctaneAttachment[]): string[] => {
     return testAttachmentIds;
 };
 
-const getAttachmentFromIdsByName = async (
-    attachmentIds: string[],
+const getAttachmentContentByName = async (
+    entity: OctaneTest | OctaneTestSuite | OctaneApplicationModule,
     attachmentName: string
-): Promise<OctaneAttachment | undefined> => {
+): Promise<Buffer | undefined> => {
+    if (!Array.isArray(entity.attachments) || !entity.attachments.length) {
+        return undefined;
+    }
+
+    const attachmentIds: string[] = getAttachmentIds(entity.attachments);
     const query = Query.field('id')
         .inComparison(attachmentIds)
         .and(Query.field('name').equal(attachmentName));
@@ -157,7 +225,15 @@ const getAttachmentFromIdsByName = async (
         .fields('id', 'name')
         .query(query.build())
         .execute();
-    return <OctaneAttachment>octaneResponse.data[0];
+
+    const attachment: OctaneAttachment | undefined = <OctaneAttachment>octaneResponse.data[0];
+    if (attachment === undefined) {
+        return undefined;
+    }
+
+    return await getAttachmentContentById(
+        Number.parseInt(attachment!.id)
+    );
 };
 
 const getAttachmentContentById = async (
@@ -170,13 +246,13 @@ const getAttachmentContentById = async (
 
 const deserializeSourceControlDetails = (
     name: string
-): SourceControlProfile | null => {
+): SourceControlProfile | undefined => {
     const sourceControlProfile = JSON.parse(name);
-    switch (sourceControlProfile.pluginClass) {
+    switch (sourceControlProfile.Type) {
         case 'Git':
             return new GitProfile(
                 sourceControlProfile.ProfileName,
-                sourceControlProfile.pluginClass,
+                sourceControlProfile.Type,
                 sourceControlProfile.RootNode,
                 sourceControlProfile.projectpath,
                 sourceControlProfile.branch,
@@ -185,7 +261,7 @@ const deserializeSourceControlDetails = (
         case 'Subversion':
             return new SubversionProfile(
                 sourceControlProfile.ProfileName,
-                sourceControlProfile.pluginClass,
+                sourceControlProfile.Type,
                 sourceControlProfile.RootNode,
                 sourceControlProfile.projectpath,
                 sourceControlProfile.url
@@ -193,20 +269,20 @@ const deserializeSourceControlDetails = (
         case 'UNC':
             return new UNCProfile(
                 sourceControlProfile.ProfileName,
-                sourceControlProfile.pluginClass,
+                sourceControlProfile.Type,
                 sourceControlProfile.path,
                 sourceControlProfile.RootNode
             );
         case 'VFS':
             return new VFSProfile(
                 sourceControlProfile.ProfileName,
-                sourceControlProfile.pluginClass,
+                sourceControlProfile.Type,
                 sourceControlProfile.RootNode,
                 sourceControlProfile.projectpath,
                 sourceControlProfile.url
             );
         case 'VoidSCP':
-            return null;
+            return undefined;
 
         default:
             throw new Error(
@@ -229,11 +305,13 @@ const getNunitOctaneTestByName = async (
         .get(Octane.entityTypes.tests)
         .fields(
             'name',
+            'external_test_id',
             'sc_nunit_assembly_udf',
             'sc_nunit_directory_udf',
             'sc_nunit_options_udf',
             'application_modules',
-            'attachments'
+            'attachments',
+            'sc_enable_data_driven_udf'
         )
         .query(query.build())
         .execute();
@@ -253,6 +331,69 @@ const getNunitOctaneTestByName = async (
     };
 };
 
+const getTestSuiteById = async (suiteId: string): Promise<OctaneTestSuite> => {
+    let query;
+    query = Query.field('id').equal(suiteId);
+    const octaneResponse = await octane
+        .get(Octane.entityTypes.testSuites)
+        .fields('name',
+            'source_id_udf',
+            'silk_release_build_udf',
+            'silk_release_version_udf',
+            'sc_exec_keywords_udf',
+            'attachments'
+        )
+        .query(query.build())
+        .execute();
+    if (octaneResponse.data[0] === undefined) {
+        throw new Error(
+            `Not found! Test Suite with id ${suiteId} does not exist in Octane.`
+        );
+    }
+    return <OctaneTestSuite>{
+        ...octaneResponse.data[0],
+        silk_release_build_udf: octaneResponse.data[0].silk_release_build_udf ? await extractOctaneListNode(<OctaneListNode>(
+            octaneResponse.data[0].silk_release_build_udf
+        ), suiteId) : undefined,
+        silk_release_version_udf: octaneResponse.data[0].silk_release_version_udf ? await extractOctaneListNode(<OctaneListNode>(
+            octaneResponse.data[0].silk_release_version_udf
+        ), suiteId) : undefined,
+        sc_exec_keywords_udf: octaneResponse.data[0].sc_exec_keywords_udf.data ? await extractOctaneListNodes(<OctaneListNode[]>(
+            octaneResponse.data[0].sc_exec_keywords_udf.data
+        ), suiteId) : [],
+        attachments: <OctaneAttachment[]>(
+            octaneResponse.data[0].attachments.data
+        )
+    };
+};
+
+const getOctaneListNodeIds = (octaneListNodes: OctaneListNode[]): string[] => {
+    const octaneListNodeIds: string[] = [];
+    octaneListNodes.forEach(octaneListNode => {
+        octaneListNodeIds.push(octaneListNode.id);
+    });
+    return octaneListNodeIds;
+};
+
+const getOctaneListNodesFromIds = async (
+    octaneListNodeIds: string[],
+    suiteId: string
+): Promise<OctaneListNode[]> => {
+    const query = Query.field('id').inComparison(octaneListNodeIds);
+    const octaneResponse = await octane
+        .get(Octane.entityTypes.listNodes)
+        .fields("id", "name")
+        .query(query.build())
+        .execute();
+    if (octaneResponse.data === undefined) {
+        throw new Error(
+            `Not found! Could not get Execution Keywords of Test Suite with id ${suiteId} .`
+        );
+    }
+
+    return <OctaneListNode[]>(octaneResponse.data);
+}
+
 const validateOctaneTest = (test: OctaneTest, testName: string): void => {
     if (!test) {
         throw new Error(
@@ -271,6 +412,23 @@ const validateOctaneJUnitTest = (test: OctaneTest, testName: string): void => {
     }
 };
 
+const extractOctaneListNodes = async (
+    octaneListNodes: OctaneListNode[],
+    suiteId: string
+): Promise<OctaneListNode[]> => {
+    return octaneListNodes.length === 0 ? [] : await getOctaneListNodesFromIds(getOctaneListNodeIds(octaneListNodes), suiteId);
+}
+
+const extractOctaneListNode = async (
+    octaneListNode: OctaneListNode,
+    suiteId: string
+): Promise<OctaneListNode | undefined> => {
+    let listNode: OctaneListNode[] = [];
+    listNode.push(octaneListNode);
+    let extractedListNode: OctaneListNode[] = await extractOctaneListNodes(listNode, suiteId);
+    return extractedListNode.pop();
+}
+
 export {
     getJunitOctaneTestByName,
     validateOctaneTest,
@@ -278,9 +436,11 @@ export {
     getNunitOctaneTestByName,
     deserializeSourceControlDetails,
     getApplicationModuleIds,
-    getAppModuleFromIdsBySourceType,
+    getAppModuleBySourceType,
     getAttachmentIds,
-    getAttachmentFromIdsByName,
+    getAttachmentContentByName,
     getAttachmentContentById,
-    getOctaneKDTByName
+    getOctaneKDTByName,
+    getTestSuiteById,
+    getOctaneProcessExecutorByName
 };
