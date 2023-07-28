@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import OctaneTest from '../model/octane/octaneTest';
-import {Octane, Query} from '@microfocus/alm-octane-js-rest-sdk';
+import { Octane, Query } from '@microfocus/alm-octane-js-rest-sdk';
 import PropertiesReader from 'properties-reader';
 import SourceControlProfile from '../model/silk/sourceControlProfile';
 import GitProfile from '../model/silk/gitProfile.js';
@@ -23,13 +23,8 @@ import UNCProfile from '../model/silk/UNCProfile.js';
 import VFSProfile from '../model/silk/VFSProfile.js';
 import OctaneApplicationModule from '../model/octane/octaneApplicationModule';
 import OctaneAttachment from '../model/octane/octaneAttachment';
-<<<<<<< HEAD
 import OctaneListNode from '../model/octane/octaneListNode';
 import OctaneTestSuite from '../model/octane/octaneTestSuite';
-=======
-import OctaneListNode from "../model/octane/octaneListNode";
-import OctaneTestSuite from "../model/octane/octaneTestSuite";
->>>>>>> 2f0e8f8c5d58d1478a545670a1cc49b4625bab65
 
 const properties = PropertiesReader('./octane-details.properties');
 const octane = new Octane({
@@ -88,7 +83,6 @@ const getOctaneKDTByName = async (testName: string): Promise<OctaneTest> => {
         .and(Query.field('component').equal(Query.NULL));
     const octaneResponse = await octane
         .get(Octane.entityTypes.tests)
-<<<<<<< HEAD
         .fields(
             'name',
             'external_test_id',
@@ -96,9 +90,6 @@ const getOctaneKDTByName = async (testName: string): Promise<OctaneTest> => {
             'application_modules',
             'sc_enable_data_driven_udf'
         )
-=======
-        .fields('name', 'external_test_id', 'attachments', 'application_modules', 'sc_enable_data_driven_udf')
->>>>>>> 2f0e8f8c5d58d1478a545670a1cc49b4625bab65
         .query(query.build())
         .execute();
     if (octaneResponse.data[0] === undefined) {
@@ -117,7 +108,6 @@ const getOctaneKDTByName = async (testName: string): Promise<OctaneTest> => {
     };
 };
 
-<<<<<<< HEAD
 const getOctaneProcessExecutorByName = async (
     testName: string
 ): Promise<OctaneTest> => {
@@ -157,8 +147,6 @@ const getOctaneProcessExecutorByName = async (
     };
 };
 
-=======
->>>>>>> 2f0e8f8c5d58d1478a545670a1cc49b4625bab65
 const getAppModuleBySourceType = async (
     test: OctaneTest,
     sourceType: string
@@ -343,15 +331,9 @@ const getNunitOctaneTestByName = async (
     };
 };
 
-<<<<<<< HEAD
 const getTestSuiteById = async (suiteId: string): Promise<OctaneTestSuite> => {
     let query;
     query = Query.field('id').equal(suiteId);
-=======
-const getTestSuiteById = async (suiteId: string) : Promise<OctaneTestSuite> => {
-    let query;
-    query = Query.field("id").equal(suiteId);
->>>>>>> 2f0e8f8c5d58d1478a545670a1cc49b4625bab65
     const octaneResponse = await octane
         .get(Octane.entityTypes.testSuites)
         .fields('name',
@@ -460,8 +442,5 @@ export {
     getAttachmentContentById,
     getOctaneKDTByName,
     getTestSuiteById,
-<<<<<<< HEAD
     getOctaneProcessExecutorByName
-=======
->>>>>>> 2f0e8f8c5d58d1478a545670a1cc49b4625bab65
 };

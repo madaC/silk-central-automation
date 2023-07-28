@@ -15,15 +15,9 @@
  */
 import fs from 'fs';
 import OctaneTest from '../model/octane/octaneTest';
-<<<<<<< HEAD
 import OctaneListNode from '../model/octane/octaneListNode';
 
 import OctaneTestSuite from '../model/octane/octaneTestSuite';
-=======
-import OctaneListNode from "../model/octane/octaneListNode";
-
-import OctaneTestSuite from "../model/octane/octaneTestSuite";
->>>>>>> 2f0e8f8c5d58d1478a545670a1cc49b4625bab65
 import {
     getAttachmentContentByName,
     getTestSuiteById
@@ -279,7 +273,6 @@ const getPredefinedParameters = async (
     let predefinedParameters: { [key: string]: string } = {};
     predefinedParameters['#sctm_regular_execdef_run_id'] = suiteRunId;
     if (testContainerAppModule.sc_product_name_udf) {
-<<<<<<< HEAD
         predefinedParameters['#sctm_product'] =
             testContainerAppModule.sc_product_name_udf;
     }
@@ -288,12 +281,6 @@ const getPredefinedParameters = async (
             sourceControlProfile.getAbsoluteWorkingFolderPath(
                 getRootWorkingFolder(test)
             );
-=======
-        predefinedParameters['#sctm_product'] = testContainerAppModule.sc_product_name_udf;
-    }
-    if (sourceControlProfile) {
-       predefinedParameters['#sctm_source_root_dir'] = sourceControlProfile.getAbsoluteWorkingFolderPath(getRootWorkingFolder(test));
->>>>>>> 2f0e8f8c5d58d1478a545670a1cc49b4625bab65
     }
     let testRelatedParameters: { [key: string]: string } = getTestRelatedParameters(test);
     let testSuiteRelatedParameters: { [key: string]: string } = await getTestSuiteRelatedParameters(testSuite);
@@ -307,7 +294,6 @@ const getPredefinedParameters = async (
     }
 
     return predefinedParameters;
-<<<<<<< HEAD
 };
 
 const getTestRelatedParameters = (
@@ -317,13 +303,6 @@ const getTestRelatedParameters = (
     testParameters['#sctm_data_driven_parent_test_name'] = extractName(
         test.name
     );
-=======
-}
-
-const getTestRelatedParameters = (test: OctaneTest): { [key: string]: string } => {
-    let testParameters: { [key: string]: string } = {};
-    testParameters['#sctm_data_driven_parent_test_name'] = extractName(test.name);
->>>>>>> 2f0e8f8c5d58d1478a545670a1cc49b4625bab65
     testParameters['#sctm_test_name'] = extractName(test.name);
     testParameters['#sctm_test_id'] = test.id;
     testParameters['#sctm_data_driven_parent_test_id'] = test.id;
@@ -335,17 +314,11 @@ const getTestRelatedParameters = (test: OctaneTest): { [key: string]: string } =
         testParameters['#external_id'] = test.external_test_id;
     }
     return testParameters;
-<<<<<<< HEAD
 };
 
 const getTestSuiteRelatedParameters = async (
     testSuite: OctaneTestSuite
 ): Promise<{ [key: string]: string }> => {
-=======
-}
-
-const getTestSuiteRelatedParameters = async (testSuite: OctaneTestSuite): Promise<{ [key: string]: string }> => {
->>>>>>> 2f0e8f8c5d58d1478a545670a1cc49b4625bab65
     let testSuiteParameters: { [key: string]: string } = {};
     testSuiteParameters['#sctm_execdef_name'] = testSuite.name;
     testSuiteParameters['#sctm_execdef_id'] = testSuite.id;
@@ -355,7 +328,6 @@ const getTestSuiteRelatedParameters = async (testSuite: OctaneTestSuite): Promis
     if (testSuite.source_id_udf) {
         testSuiteParameters['#sctm_execdef_id'] = testSuite.source_id_udf;
     }
-<<<<<<< HEAD
     if (
         testSuite.sc_exec_keywords_udf &&
         testSuite.sc_exec_keywords_udf.length > 0
@@ -380,44 +352,19 @@ const getTestSuiteRelatedParameters = async (testSuite: OctaneTestSuite): Promis
 const getOctaneListNodesAsString = async (
     octaneListNodes: OctaneListNode[]
 ): Promise<string> => {
-=======
-    if (testSuite.sc_exec_keywords_udf && testSuite.sc_exec_keywords_udf.length > 0) {
-        testSuiteParameters['#sctm_keywords'] = await getOctaneListNodesAsString(testSuite.sc_exec_keywords_udf);
-    }
-    if (testSuite.silk_release_build_udf) {
-        testSuiteParameters['#sctm_build'] = extractBuildVersion(testSuite.silk_release_build_udf.name);
-    }
-    if (testSuite.silk_release_version_udf) {
-        testSuiteParameters['#sctm_version'] = extractBuildVersion(testSuite.silk_release_version_udf.name);
-    }
-
-    return testSuiteParameters;
-}
-
-const getOctaneListNodesAsString = async (octaneListNodes: OctaneListNode[]): Promise<string> => {
->>>>>>> 2f0e8f8c5d58d1478a545670a1cc49b4625bab65
     const octaneListNodeNames: string[] = [];
     octaneListNodes.forEach(octaneListNode => {
         octaneListNodeNames.push(octaneListNode.name);
     });
-<<<<<<< HEAD
     return octaneListNodeNames.join(',');
 };
 
 const extractName = (octaneTestName: string): string => {
     let lastIndexOfUnderscore = octaneTestName.lastIndexOf('_');
-=======
-    return octaneListNodeNames.join(",");
-}
-
-const extractName = (octaneTestName: string): string => {
-    let lastIndexOfUnderscore = octaneTestName.lastIndexOf("_");
->>>>>>> 2f0e8f8c5d58d1478a545670a1cc49b4625bab65
     if (lastIndexOfUnderscore == -1) {
         return octaneTestName;
     }
     return octaneTestName.substring(0, lastIndexOfUnderscore);
-<<<<<<< HEAD
 };
 
 const extractBuildVersion = (name: string): string => {
@@ -430,17 +377,6 @@ const extractBuildVersion = (name: string): string => {
     }
     return name.substring(lastIndexOfUnderscore + 1);
 };
-=======
-}
-
-const extractBuildVersion = (name: string): string => {
-    let lastIndexOfUnderscore = name.lastIndexOf(" ");
-    if (lastIndexOfUnderscore == -1 || lastIndexOfUnderscore == name.length - 1) {
-        return name;
-    }
-    return name.substring(lastIndexOfUnderscore + 1);
-}
->>>>>>> 2f0e8f8c5d58d1478a545670a1cc49b4625bab65
 
 const getParameters = async (
     test: OctaneTest | OctaneTestSuite,
@@ -516,17 +452,10 @@ const getTestParameters = async (test: OctaneTest,
                 iteration[predefinedParam] = mergedParameters[predefinedParam];
             }
             if (addIterationName) {
-<<<<<<< HEAD
                 iteration['#sctm_test_name'] =
                     i + ' (' + iteration['#sctm_test_name'] + ')';
             }
         }
-=======
-                iteration["#sctm_test_name"] = i + ' (' + iteration["#sctm_test_name"] + ')';
-            }
-        }
-
->>>>>>> 2f0e8f8c5d58d1478a545670a1cc49b4625bab65
     } else {
         iterations.push(mergedParameters);
     }
@@ -558,11 +487,8 @@ export {
     getPredefinedParameters,
     getTestParameters,
     getTestNames,
-<<<<<<< HEAD
     getOctaneListNodesAsString,
     replaceParamsValuesInProcessExecutorTest,
-=======
->>>>>>> 2f0e8f8c5d58d1478a545670a1cc49b4625bab65
     ROOT_SOURCES_FOLDER,
     TEST_RESULT_FILE,
     EXECUTABLE_FILE
