@@ -19,13 +19,9 @@ import Credentials from './model/credentials';
 import NunitDirectories from './model/nunitDirectories';
 import {
     deserializeSourceControlDetails,
-    getApplicationModuleIds,
     getNunitOctaneTestByName,
-    getAppModuleFromIdsBySourceType,
-    validateOctaneTest,
-    getAttachmentIds,
-    getAttachmentFromIdsByName,
-    getAttachmentContentById
+    getAppModuleBySourceType,
+    validateOctaneTest
 } from './utils/octaneClient.js';
 import SourceControlProfile from './model/silk/sourceControlProfile';
 import { getAbsoluteClasspath } from './utils/classpath.js';
@@ -33,15 +29,13 @@ import {
     cleanUpWorkingFiles,
     EXECUTABLE_FILE,
     getEnvironmentVariables,
-    getRootWorkingFolder,
+    getTestParameters,
+    getRootWorkingFolder, getTestNames,
     replaceParametersFromCSV,
-    replaceParamsValuesInJunitTest,
     replaceParamsValuesInNunitTest,
     TEST_RESULT_FILE
 } from './utils/files.js';
-import OctaneAttachment from './model/octane/octaneAttachment';
-import csv from 'csvtojson';
-import it from 'node:test';
+import OctaneApplicationModule from "./model/octane/octaneApplicationModule";
 
 const NUNIT3_CONSOLE = 'nunit3-console.exe';
 
@@ -49,20 +43,10 @@ const createCommand = async (
     nunitDirectories: NunitDirectories,
     test: OctaneTest,
     timestamp: number,
+    testContainerAppModule: OctaneApplicationModule,
+    sourceControlProfile: SourceControlProfile | undefined,
     credentials?: Credentials
 ) => {
-    const assignedAppModulesIds = getApplicationModuleIds(
-        test.application_modules!
-    );
-    const testContainerAppModule = await getAppModuleFromIdsBySourceType(
-        assignedAppModulesIds,
-        'test container'
-    );
-    const sourceControlProfile: SourceControlProfile | null =
-        deserializeSourceControlDetails(
-            testContainerAppModule.sc_source_control_udf
-        );
-
     let dllPath;
     if (sourceControlProfile) {
         const rootWorkingFolder = getRootWorkingFolder(test);
@@ -107,7 +91,8 @@ const createCommand = async (
         test.sc_nunit_options_udf != null ? test.sc_nunit_options_udf : '';
     const outputFilePath = `./${TEST_RESULT_FILE}/${test.name}_${timestamp}_output_nunit.xml`;
     let command;
-    command = `"${nunitDirectory}" ${nunitOptions} --result="${outputFilePath}";transform="./nunit3-junit.xslt" ${dllPath}`;
+    //this should always be in one line
+    command = `"${nunitDirectory}" ${nunitOptions} --result="${outputFilePath}";transform="./nunit3-junit.xslt" "${dllPath}"`;
 
     return command;
 };
@@ -117,6 +102,7 @@ const getJavaCommand = (
     runnerJarPath: string,
     timestamp: number
 ) => {
+    //this should always be in one line
     return `java -cp "${runnerJarPath}" com.microfocus.adm.almoctane.migration.plugin_silk_central.nunit.NUnitCmdLineWrapper ${testMethod} ${timestamp}`;
 };
 
@@ -124,6 +110,8 @@ const getExecutableFile = async (
     testsToRun: string,
     runnerJarPath: string,
     nunitDirectories: NunitDirectories,
+    suiteId: string,
+    suiteRunId: string,
     githubCredentials?: Credentials
 ) => {
     cleanUpWorkingFiles();
@@ -131,67 +119,40 @@ const getExecutableFile = async (
         fs.unlinkSync('./java_command_to_execute.bat');
     }
 
-    const testNames = testsToRun.substring(1).split('+');
+    const testNames: string[] = getTestNames(testsToRun);
 
     for (const testName of testNames) {
         const test = await getNunitOctaneTestByName(testName);
         validateOctaneTest(test, testName);
-        const testAttachmentsIds = getAttachmentIds(test.attachments!);
-        const csvParametersAttachment: OctaneAttachment | undefined =
-            await getAttachmentFromIdsByName(
-                testAttachmentsIds,
-                'SC_parameters.csv'
-            );
 
-        const environmentParams = getEnvironmentVariables();
-        if (csvParametersAttachment) {
-            const csvParametersAttachmentContent =
-                await getAttachmentContentById(
-                    Number.parseInt(csvParametersAttachment!.id)
-                );
-            let iterations: { [key: string]: string }[] =
-                await csv().fromString(
-                    csvParametersAttachmentContent.toString()
-                );
-            const iterationsParams = await replaceParametersFromCSV(
-                iterations,
-                environmentParams
+        const testContainerAppModule: OctaneApplicationModule =
+            await getAppModuleBySourceType(test, 'test container');
+        const sourceControlProfile: SourceControlProfile | undefined =
+            deserializeSourceControlDetails(
+                testContainerAppModule.sc_source_control_udf
             );
-            for (const iteration of iterationsParams) {
-                const testWithParams = replaceParamsValuesInNunitTest(
-                    iteration,
-                    environmentParams,
-                    test
-                );
-                const timestamp = Date.now();
-                const command = await createCommand(
-                    nunitDirectories,
-                    testWithParams,
-                    timestamp,
-                    githubCredentials
-                );
-                fs.appendFileSync(EXECUTABLE_FILE, command + '\n');
-                const javaCommand = getJavaCommand(
-                    testName,
-                    runnerJarPath,
-                    timestamp
-                );
-                fs.appendFileSync(
-                    './java_command_to_execute.bat',
-                    javaCommand + '\n'
-                );
-            }
-        } else {
-            const testWithEnvParams = replaceParamsValuesInNunitTest(
-                { '': '' },
+        const environmentParams = getEnvironmentVariables();
+        let iterations: { [key: string]: string }[] = await getTestParameters(test, testContainerAppModule, suiteId,
+            suiteRunId, sourceControlProfile);
+
+        const iterationsParams = await replaceParametersFromCSV(
+            iterations,
+            environmentParams
+        );
+
+        for (const iteration of iterationsParams) {
+            const testWithParams = replaceParamsValuesInNunitTest(
+                iteration,
                 environmentParams,
                 test
             );
             const timestamp = Date.now();
             const command = await createCommand(
                 nunitDirectories,
-                testWithEnvParams,
+                testWithParams,
                 timestamp,
+                testContainerAppModule,
+                sourceControlProfile,
                 githubCredentials
             );
             fs.appendFileSync(EXECUTABLE_FILE, command + '\n');
@@ -212,10 +173,12 @@ let credentials: Credentials | undefined = undefined;
 let nunitDirectories: NunitDirectories | undefined = undefined;
 const testsToRun = process.argv[2];
 const jarPath = process.argv[3];
-const nunit2 = process.argv[4];
-const nunit3 = process.argv[5];
-const username = process.argv[6];
-const password = process.argv[7];
+const suiteId = process.argv[4];
+const suiteRunId = process.argv[5];
+const nunit2 = process.argv[6];
+const nunit3 = process.argv[7];
+const username = process.argv[8];
+const password = process.argv[9];
 
 if (!testsToRun || !jarPath) {
     throw new Error('testsToRun and jarPath parameters are mandatory!');
@@ -233,6 +196,6 @@ nunitDirectories = {
     nunit3: nunit3
 };
 
-getExecutableFile(testsToRun, jarPath, nunitDirectories, credentials)
+getExecutableFile(testsToRun, jarPath, nunitDirectories, suiteId, suiteRunId, credentials)
     .then(() => console.log('Executable file was successfully created.'))
     .catch(err => console.error(err.message, err));

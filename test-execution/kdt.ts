@@ -17,23 +17,18 @@ import {
     cleanUpWorkingFiles,
     EXECUTABLE_FILE,
     getEnvironmentVariables,
-    getModifiedCSVBytes,
-    getRootWorkingFolder,
+    getModifiedCSVBytes, getTestParameters,
+    getRootWorkingFolder, getTestNames,
     replaceParametersFromCSV
 } from './utils/files.js';
 import fs from 'fs';
 import path from 'node:path';
 import {
-    getApplicationModuleIds,
-    getAppModuleFromIdsBySourceType,
-    getAttachmentContentById,
-    getAttachmentFromIdsByName,
-    getAttachmentIds,
+    getAppModuleBySourceType,
+    getAttachmentContentByName,
     getOctaneKDTByName
 } from './utils/octaneClient.js';
-import OctaneAttachment from './model/octane/octaneAttachment';
 import OctaneApplicationModule from './model/octane/octaneApplicationModule';
-import csv from 'csvtojson';
 import OctaneTest from './model/octane/octaneTest';
 
 const getCommand = async (
@@ -41,20 +36,16 @@ const getCommand = async (
     runnerJarPath: string,
     test: OctaneTest
 ): Promise<string> => {
-    const testAttachmentsIds = getAttachmentIds(test.attachments!);
-    const keywordsJsonAttachment: OctaneAttachment | undefined =
-        await getAttachmentFromIdsByName(
-            testAttachmentsIds,
+    const keywordsJsonAttachmentContent: Buffer | undefined =
+        await getAttachmentContentByName(
+            test,
             'SC_keywords.json'
         );
-    if (!keywordsJsonAttachment) {
+    if (!keywordsJsonAttachmentContent) {
         throw new Error(
             `keywords.json attachment is missing for Octane test with id ${test.id}`
         );
     }
-    const keywordsJsonAttachmentContent = await getAttachmentContentById(
-        Number.parseInt(keywordsJsonAttachment!.id)
-    );
     const rootWorkingFolder = getRootWorkingFolder(test);
     const absoluteRootWorkingFolder = path.resolve(rootWorkingFolder);
     fs.mkdirSync(rootWorkingFolder, { recursive: true });
@@ -66,93 +57,71 @@ const getCommand = async (
             2
         )
     );
-    const assignedAppModulesIds = getApplicationModuleIds(
-        test.application_modules!
-    );
+
     const libraryAppModule: OctaneApplicationModule =
-        await getAppModuleFromIdsBySourceType(assignedAppModulesIds, 'library');
-    const libraryAttachmentsIds = getAttachmentIds(
-        libraryAppModule.attachments!
-    );
-    const libraryZipAttachment: OctaneAttachment | undefined =
-        await getAttachmentFromIdsByName(libraryAttachmentsIds, 'library.zip');
-    if (!libraryZipAttachment) {
+        await getAppModuleBySourceType(test, 'library');
+    const libraryZipAttachmentContent: Buffer | undefined =
+        await getAttachmentContentByName(libraryAppModule, 'library.zip');
+    if (!libraryZipAttachmentContent) {
         throw new Error(
             `library.zip attachment is missing for Octane test with id ${test.id}`
         );
     }
-    const libraryZipAttachmentContent = await getAttachmentContentById(
-        Number.parseInt(libraryZipAttachment!.id)
-    );
     fs.writeFileSync(
         `${rootWorkingFolder}/library.zip`,
         libraryZipAttachmentContent
     );
     const dependenciesAbsolutePath = path.resolve('dependencies');
 
-    return `java -cp "${runnerJarPath};${dependenciesAbsolutePath}${path.sep}*"
-     ${getJavaLibraryPath()} com.microfocus.adm.almoctane.migration.plugin_silk_central.kdt.EngineWrapper 
-     ${absoluteRootWorkingFolder} ${octaneTestName}`;
+    //this should always be in one line
+    return `java -cp "${runnerJarPath};${dependenciesAbsolutePath}${path.sep}*" ${getJavaLibraryPath()} com.microfocus.adm.almoctane.migration.plugin_silk_central.kdt.EngineWrapper "${absoluteRootWorkingFolder}" ${octaneTestName}`;
 };
 
 const generateExecutableFile = async (
     testsToRun: string,
-    runnerJarPath: string
+    runnerJarPath: string,
+    suiteId: string,
+    suiteRunId: string
 ): Promise<void> => {
     cleanUpWorkingFiles();
 
-    const testNames = testsToRun.substring(1).split('+');
+    const testNames: string[] = getTestNames(testsToRun);
     for (const testName of testNames) {
         const test = await getOctaneKDTByName(testName);
-        const testAttachmentsIds = getAttachmentIds(test.attachments!);
-
         const command = await getCommand(testName, runnerJarPath, test);
 
-        const csvParametersAttachment: OctaneAttachment | undefined =
-            await getAttachmentFromIdsByName(
-                testAttachmentsIds,
-                'SC_parameters.csv'
-            );
-
+        const testContainerAppModule: OctaneApplicationModule =
+            await getAppModuleBySourceType(test, 'test container');
         const environmentParams = getEnvironmentVariables();
+        let iterations: { [key: string]: string }[] = await getTestParameters(test, testContainerAppModule, suiteId,
+            suiteRunId, undefined);
         const rootWorkingFolder = getRootWorkingFolder(test);
 
-        if (csvParametersAttachment) {
-            const csvParametersAttachmentContent =
-                await getAttachmentContentById(
-                    Number.parseInt(csvParametersAttachment!.id)
-                );
+        iterations = await replaceParametersFromCSV(
+            iterations,
+            environmentParams
+        );
 
-            let iterations: { [key: string]: string }[] =
-                await csv().fromString(
-                    csvParametersAttachmentContent.toString()
-                );
-            iterations = await replaceParametersFromCSV(
-                iterations,
-                environmentParams
-            );
+        let modifiedCSVContent = await getModifiedCSVBytes(iterations);
 
-            let modifiedCSVContent = await getModifiedCSVBytes(iterations);
+        fs.writeFileSync(
+            `${rootWorkingFolder}/SC_parameters.csv`,
+            modifiedCSVContent
+        );
 
-            fs.writeFileSync(
-                `${rootWorkingFolder}/SC_parameters.csv`,
-                modifiedCSVContent
-            );
-
-            let isLastIteration: boolean | undefined;
-            for (let i = 0; i < iterations.length; i++) {
-                if (iterations.length > 1) {
-                    if (i == iterations.length - 1) {
-                        isLastIteration = true;
-                    } else {
-                        isLastIteration = false;
-                    }
-                }
-                fs.appendFileSync(EXECUTABLE_FILE, `${command} ${iterations.length > 1 ? i : ''} ${isLastIteration ?? ''}` + '\n');
+        let isLastIteration: boolean | undefined;
+        for (let i = 0; i < iterations.length; i++) {
+            if (iterations.length > 1) {
+                isLastIteration = i == iterations.length - 1;
             }
-        } else {
-            fs.appendFileSync(EXECUTABLE_FILE, command + '\n');
+            if (iterations.length > 1) {
+                fs.appendFileSync(EXECUTABLE_FILE,`set #sctm_test_results_dir=${path.resolve(`execution_files/${i} (${test.name})`)}\n`);
+            } else {
+                fs.appendFileSync(EXECUTABLE_FILE, `set #sctm_test_results_dir=${path.resolve(`execution_files/${test.name}`)}\n`);
+            }
+            fs.appendFileSync(EXECUTABLE_FILE, `${command} ${iterations.length > 1 ? i : ''} ${isLastIteration ?? ''}` + '\n');
         }
+
     }
 };
 
@@ -165,11 +134,13 @@ const getJavaLibraryPath = (): string => {
 
 const testsToRun = process.argv[2];
 const jarPath = process.argv[3];
+const suiteId = process.argv[4];
+const suiteRunId = process.argv[5];
 
 if (!testsToRun || !jarPath) {
     throw new Error('testsToRun and jarPath parameters are mandatory!');
 }
 
-generateExecutableFile(testsToRun, jarPath)
+generateExecutableFile(testsToRun, jarPath, suiteId, suiteRunId)
     .then(() => console.log('Executable file was successfully created.'))
     .catch(err => console.error(err.message, err));
