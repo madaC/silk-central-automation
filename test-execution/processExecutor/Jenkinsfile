@@ -46,7 +46,6 @@ pipeline{
                         } catch(err) {
                             bat 'echo Tests failed! Continue...'
                         }
-                        bat 'call java_command_to_execute.bat'
                         bat 'call echo "deleting test source files..."'
                     }
                 }
