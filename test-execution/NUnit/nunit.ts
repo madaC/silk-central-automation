@@ -34,7 +34,7 @@ import {
     replaceParametersReferences,
     replaceParamsValuesInNunitTest,
     TEST_RESULT_FILE
-} from '../utils/files';
+} from '../utils/files.js';
 import OctaneApplicationModule from "../model/octane/octaneApplicationModule";
 
 const NUNIT3_CONSOLE = 'nunit3-console.exe';
