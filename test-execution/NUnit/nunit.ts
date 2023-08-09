@@ -30,26 +30,29 @@ import {
     EXECUTABLE_FILE,
     getEnvironmentVariables,
     getTestParameters,
-    getRootWorkingFolder, getTestNames,
+    getSourcesFolder, getTestNames,
     replaceParametersReferences,
     replaceParamsValuesInNunitTest,
-    TEST_RESULT_FILE
+    TEST_RESULT_FILE, ROOT_SOURCES_FOLDER
 } from '../utils/files.js';
 import OctaneApplicationModule from "../model/octane/octaneApplicationModule";
+import format from "dateformat";
 
 const NUNIT3_CONSOLE = 'nunit3-console.exe';
 
 const createCommand = async (
     nunitDirectories: NunitDirectories,
     test: OctaneTest,
-    timestamp: number,
     testContainerAppModule: OctaneApplicationModule,
     sourceControlProfile: SourceControlProfile | undefined,
+    timestamp: string,
+    isLastIteration: boolean | undefined,
+    iterationIndex: number | undefined,
     credentials?: Credentials
 ) => {
     let dllPath;
     if (sourceControlProfile) {
-        const rootWorkingFolder = getRootWorkingFolder(test);
+        const rootWorkingFolder = getSourcesFolder(test);
         sourceControlProfile!.createClasspathFolder(
             rootWorkingFolder,
             credentials
@@ -89,7 +92,12 @@ const createCommand = async (
     console.log('nunit_exe: ' + nunitDirectory);
     const nunitOptions =
         test.sc_nunit_options_udf != null ? test.sc_nunit_options_udf : '';
-    const outputFilePath = `./${TEST_RESULT_FILE}/${test.name}_${timestamp}_output_nunit.xml`;
+    let outputFilePath;
+    if (isLastIteration != undefined && iterationIndex != undefined) {
+        outputFilePath = `${TEST_RESULT_FILE}/${test.name}_${timestamp}/${test.name}_iteration${iterationIndex}/output_nunit.xml`;
+    } else {
+        outputFilePath = `${TEST_RESULT_FILE}/${test.name}_${timestamp}/output_nunit.xml`;
+    }
     let command;
     //this should always be in one line
     command = `"${nunitDirectory}" ${nunitOptions} --result="${outputFilePath}";transform="./nunit3-junit.xslt" "${dllPath}"`;
@@ -100,10 +108,12 @@ const createCommand = async (
 const getJavaCommand = (
     testMethod: string,
     runnerJarPath: string,
-    timestamp: number
+    timestamp: string,
+    isLastIteration: boolean | undefined,
+    iterationIndex:number | undefined
 ) => {
     //this should always be in one line
-    return `java -cp "${runnerJarPath}" com.microfocus.adm.almoctane.migration.plugin_silk_central.nunit.NUnitCmdLineWrapper ${testMethod} ${timestamp}`;
+    return `java -cp "${runnerJarPath}" com.microfocus.adm.almoctane.migration.plugin_silk_central.nunit.NUnitCmdLineWrapper ${testMethod} ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
 };
 
 const getExecutableFile = async (
@@ -112,9 +122,10 @@ const getExecutableFile = async (
     nunitDirectories: NunitDirectories,
     suiteId: string,
     suiteRunId: string,
-    githubCredentials?: Credentials
+    credentials?: Credentials
 ) => {
     cleanUpWorkingFiles();
+    fs.mkdirSync(ROOT_SOURCES_FOLDER);
     if (fs.existsSync('./java_command_to_execute.bat')) {
         fs.unlinkSync('./java_command_to_execute.bat');
     }
@@ -131,35 +142,46 @@ const getExecutableFile = async (
             deserializeSourceControlDetails(
                 testContainerAppModule.sc_source_control_udf
             );
+        const timestamp: string = format(Date.now(), "yyyy-MM-dd_HH-mm-ss-ll");
         const environmentParams = getEnvironmentVariables();
-        let iterations: { [key: string]: string }[] = await getTestParameters(test, testContainerAppModule, suiteId,
-            suiteRunId, sourceControlProfile);
+        let parameters: { [key: string]: string }[] = await getTestParameters(test, testContainerAppModule, suiteId,
+            suiteRunId, timestamp, sourceControlProfile);
 
-        const iterationsParams = await replaceParametersReferences(
-            iterations,
+        const iterationsWithReplacedParams = await replaceParametersReferences(
+            parameters,
             environmentParams
         );
 
-        for (const iteration of iterationsParams) {
+        let isLastIteration: boolean | undefined;
+        let iterationIndex: number | undefined;
+        for (let i = 0; i < iterationsWithReplacedParams.length; i++) {
+            const iteration = iterationsWithReplacedParams[i];
             const testWithParams = replaceParamsValuesInNunitTest(
                 iteration,
                 environmentParams,
                 test
             );
-            const timestamp = Date.now();
+            if (iterationsWithReplacedParams.length > 1) {
+                isLastIteration = i == iterationsWithReplacedParams.length - 1;
+                iterationIndex = i;
+            }
             const command = await createCommand(
                 nunitDirectories,
                 testWithParams,
-                timestamp,
                 testContainerAppModule,
                 sourceControlProfile,
-                githubCredentials
+                timestamp,
+                isLastIteration,
+                iterationIndex,
+                credentials
             );
             fs.appendFileSync(EXECUTABLE_FILE, command + '\n');
             const javaCommand = getJavaCommand(
                 testName,
                 runnerJarPath,
-                timestamp
+                timestamp,
+                isLastIteration,
+                iterationIndex
             );
             fs.appendFileSync(
                 './java_command_to_execute.bat',

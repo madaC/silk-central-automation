@@ -55,7 +55,8 @@ const getJunitOctaneTestByName = async (
             'sc_classpath_udf',
             'application_modules',
             'attachments',
-            'sc_enable_data_driven_udf'
+            'sc_enable_data_driven_udf',
+            'source_type_udf'
         )
         .query(query.build())
         .execute();
@@ -88,7 +89,8 @@ const getOctaneKDTByName = async (testName: string): Promise<OctaneTest> => {
             'external_test_id',
             'attachments',
             'application_modules',
-            'sc_enable_data_driven_udf'
+            'sc_enable_data_driven_udf',
+            'source_type_udf'
         )
         .query(query.build())
         .execute();
@@ -108,7 +110,7 @@ const getOctaneKDTByName = async (testName: string): Promise<OctaneTest> => {
     };
 };
 
-const getOctaneProcessExecutorByName = async (
+const getOctaneProcessExecutorTestByName = async (
     testName: string
 ): Promise<OctaneTest> => {
     const query = Query.field('name')
@@ -127,7 +129,8 @@ const getOctaneProcessExecutorByName = async (
             'sc_junit_result_udf',
             'sc_enable_data_driven_udf',
             'attachments',
-            'application_modules'
+            'application_modules',
+            'source_type_udf'
         )
         .query(query.build())
         .execute();
@@ -311,7 +314,8 @@ const getNunitOctaneTestByName = async (
             'sc_nunit_options_udf',
             'application_modules',
             'attachments',
-            'sc_enable_data_driven_udf'
+            'sc_enable_data_driven_udf',
+            'source_type_udf'
         )
         .query(query.build())
         .execute();
@@ -442,5 +446,5 @@ export {
     getAttachmentContentById,
     getOctaneKDTByName,
     getTestSuiteById,
-    getOctaneProcessExecutorByName
+    getOctaneProcessExecutorTestByName
 };

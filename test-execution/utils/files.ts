@@ -25,12 +25,12 @@ import {
 import csv from "csvtojson";
 import OctaneApplicationModule from "../model/octane/octaneApplicationModule";
 import SourceControlProfile from "../model/silk/sourceControlProfile";
+import path from "path";
 
 const ROOT_SOURCES_FOLDER = 'test_sources';
 const TEST_RESULT_FILE = 'testResults';
 const EXECUTABLE_FILE = 'command_to_execute.bat';
 const paramRegex = /\${([\S]+?)}/;
-const KDT_EXECUTION_FOLDER = 'execution_files';
 
 const cleanUpWorkingFiles = (): void => {
     if (fs.existsSync(EXECUTABLE_FILE)) {
@@ -44,16 +44,20 @@ const cleanUpWorkingFiles = (): void => {
     if (fs.existsSync(ROOT_SOURCES_FOLDER)) {
         fs.rmdirSync(ROOT_SOURCES_FOLDER, {recursive: true});
     }
-
-    if (fs.existsSync(KDT_EXECUTION_FOLDER)) {
-        fs.rmdirSync(KDT_EXECUTION_FOLDER, {recursive: true});
-    }
-
-    fs.mkdirSync(ROOT_SOURCES_FOLDER);
 };
 
-const getRootWorkingFolder = (test: OctaneTest): string => {
+const getSourcesFolder = (test: OctaneTest): string => {
     return `${ROOT_SOURCES_FOLDER}/${test.id}_test_source`;
+};
+
+const getResultsFolder = (
+    test: OctaneTest,
+    timestamp: string,
+    iterationIndex: number | undefined
+): string => {
+    if (iterationIndex != undefined) {
+        return `${TEST_RESULT_FILE}/${test.name}_${timestamp}/${test.name}_iteration${iterationIndex}`;
+    } else return `${TEST_RESULT_FILE}/${test.name}_${timestamp}`;
 };
 
 const replaceParametersReferences = async (
@@ -268,10 +272,16 @@ const getPredefinedParameters = async (
     testContainerAppModule: OctaneApplicationModule,
     testSuite: OctaneTestSuite,
     suiteRunId: string,
+    timestamp: string,
     sourceControlProfile: SourceControlProfile | undefined
 ): Promise<{ [key: string]: string }> => {
     let predefinedParameters: { [key: string]: string } = {};
     predefinedParameters['#sctm_regular_execdef_run_id'] = suiteRunId;
+    if (test.source_type_udf === 'process executor test' || test.source_type_udf === 'keyword driven test') {
+        predefinedParameters['#sctm_exec_sourcesfolder'] = path.resolve(getResultsFolder(test, timestamp, undefined));
+    } else {
+        predefinedParameters['#sctm_exec_sourcesfolder'] = path.resolve(getSourcesFolder(test));
+    }
     if (testContainerAppModule.sc_product_name_udf) {
         predefinedParameters['#sctm_product'] =
             testContainerAppModule.sc_product_name_udf;
@@ -279,7 +289,7 @@ const getPredefinedParameters = async (
     if (sourceControlProfile) {
         predefinedParameters['#sctm_source_root_dir'] =
             sourceControlProfile.getAbsoluteWorkingFolderPath(
-                getRootWorkingFolder(test)
+                getSourcesFolder(test)
             );
     }
     let testRelatedParameters: { [key: string]: string } = getTestRelatedParameters(test);
@@ -418,11 +428,12 @@ const getTestParameters = async (test: OctaneTest,
                                  testContainerAppModule: OctaneApplicationModule,
                                  suiteId: string,
                                  suiteRunId: string,
+                                 timestamp: string,
                                  sourceControlProfile: SourceControlProfile | undefined
 ): Promise<{ [key: string]: string }[]> => {
     let testSuite: OctaneTestSuite = await getTestSuiteById(suiteId);
     let predefinedParams: { [key: string]: string } = await getPredefinedParameters(test, testContainerAppModule,
-        testSuite, suiteRunId, sourceControlProfile);
+        testSuite, suiteRunId, timestamp, sourceControlProfile);
     let execPlanParameters: { [key: string]: string } = await getParameters(testSuite, 'SC_parameters.csv');
     let customParameters: { [key: string]: string } = await getParameters(test, 'SC_custom_parameters.csv');
     let mergedParameters: { [key: string]: string } = mergeParameters(
@@ -445,15 +456,17 @@ const getTestParameters = async (test: OctaneTest,
             csvParametersAttachmentContent.toString()
         );
 
-        let addIterationName: boolean = iterations.length > 1;
+        let testHasIterations: boolean = iterations.length > 1;
         for (let i = 0; i < iterations.length; i++) {
             const iteration = iterations[i];
             for (let predefinedParam in mergedParameters) {
                 iteration[predefinedParam] = mergedParameters[predefinedParam];
             }
-            if (addIterationName) {
-                iteration['#sctm_test_name'] =
-                    i + ' (' + iteration['#sctm_test_name'] + ')';
+            if (testHasIterations) {
+                iteration['#sctm_test_name'] = i + ' (' + iteration['#sctm_test_name'] + ')';
+                if (test.source_type_udf === 'process executor test' || test.source_type_udf === 'keyword driven test') {
+                    iteration['#sctm_exec_sourcesfolder'] = path.resolve(getResultsFolder(test, timestamp, i));
+                }
             }
         }
     } else {
@@ -478,7 +491,7 @@ const getTestNames = (testsToRun: string): string[] => {
 
 export {
     cleanUpWorkingFiles,
-    getRootWorkingFolder,
+    getSourcesFolder,
     replaceParametersReferences,
     replaceParamsValuesInNunitTest,
     replaceParamsValuesInJunitTest,
@@ -489,6 +502,7 @@ export {
     getTestNames,
     getOctaneListNodesAsString,
     replaceParamsValuesInProcessExecutorTest,
+    getResultsFolder,
     ROOT_SOURCES_FOLDER,
     TEST_RESULT_FILE,
     EXECUTABLE_FILE

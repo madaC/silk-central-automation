@@ -7,7 +7,7 @@ pipeline{
     }
     parameters {
         string(name: 'testsToRun',description: '' )
-        string(name: 'runnerJarPath', defaultValue: 'C:\\Test-Execution-silk-Central\\octane-shift-execution-wrapper-4.28-SNAPSHOT.jar', description: "")
+        string(name: 'runnerJarPath', defaultValue: '', description: "")
         string(name: 'nunit2',defaultValue: '',description: '' )
         string(name: 'nunit3',defaultValue: '' )
         string(name: 'suiteId',description: '' )
@@ -38,11 +38,11 @@ pipeline{
             }
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: '6cfdfdfd-819b-49cb-9b55-64b7c444326b', usernameVariable: 'username', passwordVariable: 'password')]) {
+                    withCredentials([usernamePassword(credentialsId: '', usernameVariable: 'github_user', passwordVariable: 'github_password')]) {
                         dir('test-execution') {
                             bat 'npm install'
                             bat 'npm run build'
-                            bat 'call npm run start-nunit "%testsToRun%" "%runnerJarPath%" %suiteId% %suiteRunId% %nunit2% %nunit3% %username% %password%'
+                            bat 'call npm run start-nunit "%testsToRun%" "%runnerJarPath%" %suiteId% %suiteRunId% %nunit2% %nunit3% %github_user% %github_password%'
                             bat 'call echo "running tests..."'
                             try {
                                 bat 'call command_to_execute.bat'
@@ -51,6 +51,7 @@ pipeline{
                             }
                             bat 'call java_command_to_execute.bat'
                             bat 'call echo "deleting test source files..."'
+                            bat 'rmdir test_sources /s /q'
                         }
 
                     }

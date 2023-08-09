@@ -18,8 +18,8 @@ import {
     EXECUTABLE_FILE,
     getEnvironmentVariables,
     getModifiedCSVBytes, getTestParameters,
-    getRootWorkingFolder, getTestNames,
-    replaceParametersReferences
+    getSourcesFolder, getTestNames,
+    replaceParametersReferences, getResultsFolder, ROOT_SOURCES_FOLDER
 } from '../utils/files.js';
 import fs from 'fs';
 import path from 'node:path';
@@ -47,7 +47,7 @@ const getCommand = async (
             `keywords.json attachment is missing for Octane test with id ${test.id}`
         );
     }
-    const rootWorkingFolder = getRootWorkingFolder(test);
+    const rootWorkingFolder = getSourcesFolder(test);
     const absoluteRootWorkingFolder = path.resolve(rootWorkingFolder);
     fs.mkdirSync(rootWorkingFolder, { recursive: true });
     fs.writeFileSync(
@@ -85,6 +85,7 @@ const generateExecutableFile = async (
     suiteRunId: string
 ): Promise<void> => {
     cleanUpWorkingFiles();
+    fs.mkdirSync(ROOT_SOURCES_FOLDER);
 
     const testNames: string[] = getTestNames(testsToRun);
     for (const testName of testNames) {
@@ -93,10 +94,11 @@ const generateExecutableFile = async (
 
         const testContainerAppModule: OctaneApplicationModule =
             await getAppModuleBySourceType(test, 'test container');
+        const timestamp: string = format(Date.now(), "yyyy-MM-dd_HH-mm-ss-ll");
         const environmentParams = getEnvironmentVariables();
         let parameters: { [key: string]: string }[] = await getTestParameters(test, testContainerAppModule, suiteId,
-            suiteRunId, undefined);
-        const rootWorkingFolder = getRootWorkingFolder(test);
+            suiteRunId, timestamp, undefined);
+        const rootWorkingFolder = getSourcesFolder(test);
 
         parameters = await replaceParametersReferences(
             parameters,
@@ -110,7 +112,6 @@ const generateExecutableFile = async (
             modifiedCSVContent
         );
 
-        const timestamp: string = format(Date.now(), "yyyy-MM-dd_HH-mm-ss-ll");
         let isLastIteration: boolean | undefined;
         let iterationIndex: number | undefined;
         for (let i = 0; i < parameters.length; i++) {
@@ -119,9 +120,9 @@ const generateExecutableFile = async (
                 iterationIndex = i;
             }
             if (parameters.length > 1) {
-                fs.appendFileSync(EXECUTABLE_FILE,`set #sctm_test_results_dir=${path.resolve(`testResults/${test.name}_${timestamp}/${test.name}_iteration${iterationIndex}`)}\n`);
+                fs.appendFileSync(EXECUTABLE_FILE,`set #sctm_test_results_dir=${path.resolve(getResultsFolder(test, timestamp, iterationIndex))}\n`);
             } else {
-                fs.appendFileSync(EXECUTABLE_FILE, `set #sctm_test_results_dir=${path.resolve(`testResults/${test.name}_${timestamp}`)}\n`);
+                fs.appendFileSync(EXECUTABLE_FILE, `set #sctm_test_results_dir=${path.resolve(getResultsFolder(test, timestamp, undefined))}\n`);
             }
             fs.appendFileSync(EXECUTABLE_FILE, `${command} ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}` + '\n');
         }

@@ -33,5 +33,6 @@ export default interface OctaneTest {
     sc_executable_name_udf?: string,
     sc_argument_list_udf?: string,
     sc_working_folder_udf?: string,
-    sc_junit_result_udf?: string
+    sc_junit_result_udf?: string,
+    source_type_udf: string
 }

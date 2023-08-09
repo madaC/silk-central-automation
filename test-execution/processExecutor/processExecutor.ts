@@ -22,7 +22,7 @@ import {
     replaceParametersReferences,
     replaceParamsValuesInProcessExecutorTest
 } from '../utils/files.js';
-import {getAppModuleBySourceType, getOctaneProcessExecutorByName} from '../utils/octaneClient.js';
+import {getAppModuleBySourceType, getOctaneProcessExecutorTestByName} from '../utils/octaneClient.js';
 import fs from 'fs';
 import OctaneTest from '../model/octane/octaneTest';
 import OctaneApplicationModule from '../model/octane/octaneApplicationModule';
@@ -39,19 +39,21 @@ const generateExecutableFile = async (
     cleanUpWorkingFiles();
     const testNames: string[] = getTestNames(testsToRun);
     for (const testName of testNames) {
-        const test : OctaneTest = await getOctaneProcessExecutorByName(testName);
+        const test : OctaneTest = await getOctaneProcessExecutorTestByName(testName);
         const testContainerAppModule: OctaneApplicationModule =
             await getAppModuleBySourceType(
                 test,
                 'test container'
             );
 
+        const timestamp: string = format(Date.now(), "yyyy-MM-dd_HH-mm-ss-ll");
         const environmentParams = getEnvironmentVariables();
         let parameters: { [key: string]: string }[] = await getTestParameters(
             test,
             testContainerAppModule,
             suiteId,
             suiteRunId,
+            timestamp,
             undefined
         );
 
@@ -60,7 +62,6 @@ const generateExecutableFile = async (
             environmentParams
         );
 
-        const timestamp: string = format(Date.now(), "yyyy-MM-dd_HH-mm-ss-ll");
         let isLastIteration: boolean | undefined;
         let iterationIndex: number | undefined;
         for (let i = 0; i < iterationsWithReplacedParams.length; i++) {

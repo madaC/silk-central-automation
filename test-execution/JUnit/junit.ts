@@ -26,9 +26,9 @@ import {
     EXECUTABLE_FILE,
     getEnvironmentVariables,
     getTestParameters,
-    getRootWorkingFolder, getTestNames,
+    getSourcesFolder, getTestNames,
     replaceParametersReferences,
-    replaceParamsValuesInJunitTest
+    replaceParamsValuesInJunitTest, ROOT_SOURCES_FOLDER
 } from '../utils/files.js';
 import { getAbsoluteClasspath } from '../utils/classpath.js';
 import OctaneApplicationModule from '../model/octane/octaneApplicationModule';
@@ -50,7 +50,7 @@ const getCommand = async (
     const classpath = test.sc_classpath_udf!.replace(/\\/g, '/');
     let absoluteClasspath;
     if (sourceControlProfile) {
-        const rootWorkingFolder = getRootWorkingFolder(test);
+        const rootWorkingFolder = getSourcesFolder(test);
         await sourceControlProfile!.createClasspathFolder(
             rootWorkingFolder,
             credentials
@@ -118,6 +118,7 @@ const generateExecutableFile = async (
     credentials?: Credentials
 ): Promise<void> => {
     cleanUpWorkingFiles();
+    fs.mkdirSync(ROOT_SOURCES_FOLDER);
 
     const testNames: string[] = getTestNames(testsToRun);
     for (const testName of testNames) {
@@ -130,9 +131,10 @@ const generateExecutableFile = async (
             deserializeSourceControlDetails(
                 testContainerAppModule.sc_source_control_udf
             );
+        const timestamp: string = format(Date.now(), "yyyy-MM-dd_HH-mm-ss-ll");
         const environmentParams = getEnvironmentVariables();
         let parameters: { [key: string]: string }[] = await getTestParameters(test, testContainerAppModule, suiteId,
-            suiteRunId, sourceControlProfile);
+            suiteRunId, timestamp, sourceControlProfile);
 
         for (const parameterRow of parameters) {
             let parametersForCommand = '';
@@ -147,7 +149,6 @@ const generateExecutableFile = async (
             environmentParams
         );
 
-        const timestamp: string = format(Date.now(), "yyyy-MM-dd_HH-mm-ss-ll");
         let isLastIteration: boolean | undefined;
         let iterationIndex: number | undefined;
         for (let i = 0; i < iterationsWithReplacedParams.length; i++) {
