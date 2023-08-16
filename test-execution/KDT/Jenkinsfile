@@ -1,0 +1,71 @@
+def agentLabel = ""
+pipeline{
+    agent any
+    options {
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '10', artifactNumToKeepStr: '10'))
+    }
+    parameters {
+        string(name: 'testsToRun',description: '' )
+        string(name: 'runnerJarPath', defaultValue: '', description: "")
+        string(name: 'suiteId',description: '' )
+        string(name: 'suiteRunId',description: '' )
+    }
+
+    stages {
+
+        stage('setTag') {
+
+            steps {
+                dir('test-execution') {
+                    bat 'npm install'
+                    bat 'npm run build'
+                    bat 'echo getting execution keywords from the test suite'
+                    bat 'npm run start-init-execution-keywords %suiteId%"'
+                    script {
+                          agentLabel = readFile('execution_keywords.txt').trim()
+                    }
+                }
+
+            }
+        }
+
+        stage('Run Tests') {
+            agent{
+                label agentLabel
+            }
+            steps {
+                script {
+                    dir('test-execution') {
+                        bat 'npm install'
+                        bat 'npm run build'
+                        bat 'call npm run start-kdt "%testsToRun%" "%runnerJarPath%" %suiteId% %suiteRunId%'
+                        try {
+                            bat 'call echo "running tests..."'
+                            bat 'call command_to_execute.bat'
+                        } catch(err) {
+                            bat 'echo Tests failed! Continue...'
+                        }
+                        bat 'call echo "deleting test source files..."'
+                        bat 'rmdir test_sources /s /q'
+                    }
+                }
+                archiveArtifacts artifacts: 'test-execution/java_command_to_execute.bat,test-execution/command_to_execute.bat,test-execution/testResults/**', onlyIfSuccessful: false
+                junit allowEmptyResults: true, testResults: 'test-execution/testResults/*/*.xml'
+
+            }
+
+        }
+
+    }
+    post {
+        always {
+            cleanWs()
+        }
+        aborted {
+            cleanWs()
+            bat 'echo abort'
+        }
+    }
+
+}
