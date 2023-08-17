@@ -16,9 +16,10 @@
 import Credentials from '../credentials';
 
 export default abstract class SourceControlProfile {
-    protected name: string;
-    protected Type?: string;
-    protected _rootNode?: string;
+    public name: string;
+    public Type: string;
+    public _rootNode?: string;
+    public WorkingFolder: string;
 
     abstract createClasspathFolder(
         rootWorkingFolder: string,
@@ -27,10 +28,11 @@ export default abstract class SourceControlProfile {
 
     abstract getAbsoluteWorkingFolderPath(rootWorkingFolder: string): string;
 
-    protected constructor(name: string, pluginClass: string, rootNode: string) {
+    protected constructor(name: string, type: string, rootNode: string, workingFolder: string) {
         this.name = name;
-        this.Type = pluginClass;
+        this.Type = type;
         this._rootNode = rootNode;
+        this.WorkingFolder = workingFolder
     }
 
 }

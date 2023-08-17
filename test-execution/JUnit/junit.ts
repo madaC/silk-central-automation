@@ -28,7 +28,7 @@ import {
     getTestParameters,
     getSourcesFolder, getTestNames,
     replaceParametersReferences,
-    replaceParamsValuesInJunitTest, ROOT_SOURCES_FOLDER
+    replaceParamsValuesInJunitTest, ROOT_SOURCES_FOLDER, getJavaExecutablePath, getJVMOptions
 } from '../utils/files.js';
 import { getAbsoluteClasspath } from '../utils/classpath.js';
 import OctaneApplicationModule from '../model/octane/octaneApplicationModule';
@@ -57,16 +57,18 @@ const getCommand = async (
         );
 
         absoluteClasspath = getAbsoluteClasspath(
-            sourceControlProfile!.getAbsoluteWorkingFolderPath(
-                rootWorkingFolder
-            ),
-            classpath
+            sourceControlProfile!.getAbsoluteWorkingFolderPath(rootWorkingFolder),
+            classpath,
+            sourceControlProfile.WorkingFolder
         );
     } else {
-        absoluteClasspath = getAbsoluteClasspath('', classpath);
+        absoluteClasspath = getAbsoluteClasspath('', classpath, undefined);
     }
     const methodName = test.sc_method_name_udf;
     const classNames = test.sc_class_names_udf;
+
+    const javaExecutablePath = getJavaExecutablePath(test);
+    const jvmOptions = getJVMOptions(test);
 
     return createCommand(
         methodName,
@@ -77,7 +79,9 @@ const getCommand = async (
         paramsForCommand,
         timestamp,
         isLastIteration,
-        iterationIndex
+        iterationIndex,
+        javaExecutablePath,
+        jvmOptions
     );
 };
 
@@ -90,16 +94,18 @@ const createCommand = (
     paramsForCommand: string,
     timestamp: string,
     isLastIteration: boolean | undefined,
-    iterationIndex:number | undefined
+    iterationIndex:number | undefined,
+    javaPath: string,
+    jvmOptions: string
 ): string => {
     //the command should always be in one line
     let command;
     if (!methodName && !classNames) {
-        command = `java -cp "${absoluteClasspath};${runnerJarPath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper RunMeAsAJar null ${octaneTestName} ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
+        command = `"${javaPath}" ${jvmOptions} -cp "${absoluteClasspath};${runnerJarPath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper RunMeAsAJar null ${octaneTestName} ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
     } else if (!methodName && classNames && classNames.split(' ').length > 0) {
-        command = `java -cp "${absoluteClasspath};${runnerJarPath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper "${classNames}" null ${octaneTestName} ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
+        command = `"${javaPath}" ${jvmOptions} -cp "${absoluteClasspath};${runnerJarPath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper "${classNames}" null ${octaneTestName} ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
     } else if (methodName && classNames && classNames.split(' ').length > 0) {
-        command = `java -cp "${absoluteClasspath};${runnerJarPath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper "${classNames}" "${methodName}" ${octaneTestName} ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
+        command = `"${javaPath}" ${jvmOptions} -cp "${absoluteClasspath};${runnerJarPath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper "${classNames}" "${methodName}" ${octaneTestName} ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
     } else {
         throw new Error(
             'Could not create execution command for Octane automated test of type JUnit with name' +

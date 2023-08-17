@@ -31,9 +31,10 @@ export default class GitProfile extends SourceControlProfile {
         rootNode: string,
         projectPath: string,
         branch: string,
-        url: string
+        url: string,
+        workingFolder: string
     ) {
-        super(name, type, rootNode);
+        super(name, type, rootNode, workingFolder);
         this._projectPath = projectPath;
         this.branch = branch;
         this._url = url;

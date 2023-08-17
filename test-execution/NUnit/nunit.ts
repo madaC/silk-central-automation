@@ -59,13 +59,12 @@ const createCommand = async (
         );
 
         dllPath = getAbsoluteClasspath(
-            sourceControlProfile!.getAbsoluteWorkingFolderPath(
-                rootWorkingFolder
-            ),
-            test.sc_nunit_assembly_udf!
+            sourceControlProfile!.getAbsoluteWorkingFolderPath(rootWorkingFolder),
+            test.sc_nunit_assembly_udf!,
+            sourceControlProfile.WorkingFolder
         );
     } else {
-        dllPath = getAbsoluteClasspath('', test.sc_nunit_assembly_udf!);
+        dllPath = getAbsoluteClasspath('', test.sc_nunit_assembly_udf!, undefined);
     }
     let nunitDirectory = '';
     const octaneNunitDir = test.sc_nunit_directory_udf;

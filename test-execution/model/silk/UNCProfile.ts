@@ -25,9 +25,10 @@ export default class UNCProfile extends SourceControlProfile {
         name: string,
         type: string,
         UNCPath: string,
-        rootNode: string
+        rootNode: string,
+        workingFolder: string
     ) {
-        super(name, type, rootNode);
+        super(name, type, rootNode, workingFolder);
         this.UNCPath = UNCPath;
     }
 

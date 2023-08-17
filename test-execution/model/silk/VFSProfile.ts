@@ -30,9 +30,10 @@ export default class VFSProfile extends SourceControlProfile {
         type: string,
         rootNode: string,
         projectPath: string,
-        url: string
+        url: string,
+        workingFolder: string
     ) {
-        super(name, type, rootNode);
+        super(name, type, rootNode, workingFolder);
         this._projectPath = projectPath;
         this._url = url;
     }

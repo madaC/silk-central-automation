@@ -30,6 +30,7 @@ import path from "path";
 const ROOT_SOURCES_FOLDER = 'test_sources';
 const TEST_RESULT_FILE = 'testResults';
 const EXECUTABLE_FILE = 'command_to_execute.bat';
+const DEFAULT_VM_ARGS = "-Xmx128m";
 const paramRegex = /\${([\S]+?)}/;
 
 const cleanUpWorkingFiles = (): void => {
@@ -488,6 +489,21 @@ const getTestNames = (testsToRun: string): string[] => {
     return testNames;
 };
 
+const getJavaExecutablePath = (test: OctaneTest): string => {
+  if (test.sc_java_home_udf) {
+      return `${test.sc_java_home_udf}${path.sep}bin${path.sep}java`;
+  } else
+      return  'java';
+};
+
+const getJVMOptions = (test: OctaneTest): string => {
+  if (test.sc_jvm_options_udf) {
+      return test.sc_jvm_options_udf.replace(/\s\s+/g, ' ');
+  } else {
+      return DEFAULT_VM_ARGS;
+  }
+
+};
 
 export {
     cleanUpWorkingFiles,
@@ -503,6 +519,8 @@ export {
     getOctaneListNodesAsString,
     replaceParamsValuesInProcessExecutorTest,
     getResultsFolder,
+    getJavaExecutablePath,
+    getJVMOptions,
     ROOT_SOURCES_FOLDER,
     TEST_RESULT_FILE,
     EXECUTABLE_FILE

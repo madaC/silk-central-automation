@@ -56,7 +56,9 @@ const getJunitOctaneTestByName = async (
             'application_modules',
             'attachments',
             'sc_enable_data_driven_udf',
-            'source_type_udf'
+            'source_type_udf',
+            'sc_java_home_udf',
+            'sc_jvm_options_udf'
         )
         .query(query.build())
         .execute();
@@ -259,7 +261,8 @@ const deserializeSourceControlDetails = (
                 sourceControlProfile.RootNode,
                 sourceControlProfile.projectpath,
                 sourceControlProfile.branch,
-                sourceControlProfile.url
+                sourceControlProfile.url,
+                sourceControlProfile.WorkingFolder
             );
         case 'Subversion':
             return new SubversionProfile(
@@ -267,14 +270,16 @@ const deserializeSourceControlDetails = (
                 sourceControlProfile.Type,
                 sourceControlProfile.RootNode,
                 sourceControlProfile.projectpath,
-                sourceControlProfile.url
+                sourceControlProfile.url,
+                sourceControlProfile.WorkingFolder
             );
         case 'UNC':
             return new UNCProfile(
                 sourceControlProfile.ProfileName,
                 sourceControlProfile.Type,
                 sourceControlProfile.path,
-                sourceControlProfile.RootNode
+                sourceControlProfile.RootNode,
+                sourceControlProfile.WorkingFolder
             );
         case 'VFS':
             return new VFSProfile(
@@ -282,7 +287,8 @@ const deserializeSourceControlDetails = (
                 sourceControlProfile.Type,
                 sourceControlProfile.RootNode,
                 sourceControlProfile.projectpath,
-                sourceControlProfile.url
+                sourceControlProfile.url,
+                sourceControlProfile.WorkingFolder
             );
         case 'VoidSCP':
             return undefined;
@@ -315,7 +321,9 @@ const getNunitOctaneTestByName = async (
             'application_modules',
             'attachments',
             'sc_enable_data_driven_udf',
-            'source_type_udf'
+            'source_type_udf',
+            'sc_java_home_udf',
+            'sc_jvm_options_udf'
         )
         .query(query.build())
         .execute();
