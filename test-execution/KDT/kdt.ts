@@ -75,7 +75,7 @@ const getCommand = async (
     const dependenciesAbsolutePath = path.resolve('dependencies');
 
     //this should always be in one line
-    return `java -cp "${runnerJarPath};${dependenciesAbsolutePath}${path.sep}*" ${getJavaLibraryPath()} com.microfocus.adm.almoctane.migration.plugin_silk_central.kdt.EngineWrapper "${absoluteRootWorkingFolder}" ${octaneTestName}`;
+    return `java -cp "${runnerJarPath};${dependenciesAbsolutePath}${path.sep}*" ${getJavaLibraryPath()} com.microfocus.adm.almoctane.migration.plugin_silk_central.kdt.EngineWrapper "${absoluteRootWorkingFolder}" "${octaneTestName}"`;
 };
 
 const generateExecutableFile = async (
@@ -96,7 +96,7 @@ const generateExecutableFile = async (
             await getAppModuleBySourceType(test, 'test container');
         const timestamp: string = format(Date.now(), "yyyy-MM-dd_HH-mm-ss-ll");
         const environmentParams = getEnvironmentVariables();
-        let parameters: { [key: string]: string }[] = await getTestParameters(test, testContainerAppModule, suiteId,
+        let parameters: Map<string, string>[] = await getTestParameters(test, testContainerAppModule, suiteId,
             suiteRunId, timestamp, undefined);
         const rootWorkingFolder = getSourcesFolder(test);
 

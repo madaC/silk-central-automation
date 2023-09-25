@@ -105,14 +105,14 @@ const createCommand = async (
 };
 
 const getJavaCommand = (
-    testMethod: string,
+    octaneTestName: string,
     runnerJarPath: string,
     timestamp: string,
     isLastIteration: boolean | undefined,
     iterationIndex:number | undefined
 ) => {
     //this should always be in one line
-    return `java -cp "${runnerJarPath}" com.microfocus.adm.almoctane.migration.plugin_silk_central.nunit.NUnitCmdLineWrapper ${testMethod} ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
+    return `java -cp "${runnerJarPath}" com.microfocus.adm.almoctane.migration.plugin_silk_central.nunit.NUnitCmdLineWrapper "${octaneTestName}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
 };
 
 const getExecutableFile = async (
@@ -143,7 +143,7 @@ const getExecutableFile = async (
             );
         const timestamp: string = format(Date.now(), "yyyy-MM-dd_HH-mm-ss-ll");
         const environmentParams = getEnvironmentVariables();
-        let parameters: { [key: string]: string }[] = await getTestParameters(test, testContainerAppModule, suiteId,
+        let parameters: Map<string, string>[] = await getTestParameters(test, testContainerAppModule, suiteId,
             suiteRunId, timestamp, sourceControlProfile);
 
         const iterationsWithReplacedParams = await replaceParametersReferences(

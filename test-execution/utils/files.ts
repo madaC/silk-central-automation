@@ -21,16 +21,16 @@ import OctaneTestSuite from '../model/octane/octaneTestSuite';
 import {
     getAttachmentContentByName,
     getTestSuiteById
-} from "./octaneClient.js";
-import csv from "csvtojson";
-import OctaneApplicationModule from "../model/octane/octaneApplicationModule";
-import SourceControlProfile from "../model/silk/sourceControlProfile";
-import path from "path";
+} from './octaneClient.js';
+import csv from 'csvtojson';
+import OctaneApplicationModule from '../model/octane/octaneApplicationModule';
+import SourceControlProfile from '../model/silk/sourceControlProfile';
+import path from 'path';
 
 const ROOT_SOURCES_FOLDER = 'test_sources';
 const TEST_RESULT_FILE = 'testResults';
 const EXECUTABLE_FILE = 'command_to_execute.bat';
-const DEFAULT_VM_ARGS = "-Xmx128m";
+const DEFAULT_VM_ARGS = '-Xmx128m';
 const paramRegex = /\${([\S]+?)}/;
 
 const cleanUpWorkingFiles = (): void => {
@@ -39,11 +39,11 @@ const cleanUpWorkingFiles = (): void => {
     }
 
     if (fs.existsSync(TEST_RESULT_FILE)) {
-        fs.rmdirSync(TEST_RESULT_FILE, {recursive: true});
+        fs.rmSync(TEST_RESULT_FILE, { recursive: true });
     }
 
     if (fs.existsSync(ROOT_SOURCES_FOLDER)) {
-        fs.rmdirSync(ROOT_SOURCES_FOLDER, {recursive: true});
+        fs.rmSync(ROOT_SOURCES_FOLDER, { recursive: true });
     }
 };
 
@@ -62,27 +62,25 @@ const getResultsFolder = (
 };
 
 const replaceParametersReferences = async (
-    iterations: { [key: string]: string }[],
-    envParams: { [key: string]: string }
-): Promise<{ [key: string]: string }[]> => {
-    for (let iteration of iterations) {
-        for (let param in iteration) {
-            iteration[param] = replaceParamValue(
-                iteration[param],
-                iteration,
-                envParams,
-                []
+    iterations: Map<string, string>[],
+    envParams: Map<string, string>
+): Promise<Map<string, string>[]> => {
+    iterations.forEach((iteration: Map<string, string>) => {
+        iteration.forEach((value, key) => {
+            iteration.set(
+                key,
+                replaceParamValue(iteration.get(key)!, iteration, envParams, [])
             );
-        }
-    }
+        });
+    });
 
     return iterations;
 };
 
 const replaceParamValue = (
     val: string,
-    iteration: { [key: string]: string },
-    envParams: { [key: string]: string },
+    iteration: Map<string, string>,
+    envParams: Map<string, string>,
     prevParams: string[]
 ): string => {
     let found = val.match(paramRegex);
@@ -90,16 +88,16 @@ const replaceParamValue = (
         return val;
     }
     let paramName = found[1];
-    let paramValue = iteration[paramName];
+    let paramValue = iteration.get(paramName);
     if (!paramValue) {
-        if (envParams[paramName]) {
-            paramValue = envParams[paramName]!;
+        if (envParams.get(paramName)) {
+            paramValue = envParams.get(paramName);
         }
-        if (envParams[paramName.toUpperCase()]) {
-            paramValue = envParams[paramName.toUpperCase()]!;
+        if (envParams.get(paramName.toUpperCase())) {
+            paramValue = envParams.get(paramName.toUpperCase());
         }
-        if (envParams[paramName.toLowerCase()]) {
-            paramValue = envParams[paramName.toLowerCase()]!;
+        if (envParams.get(paramName.toLowerCase())) {
+            paramValue = envParams.get(paramName.toLowerCase());
         }
     }
     if (paramValue != undefined && !prevParams.includes(paramName)) {
@@ -137,8 +135,8 @@ const replaceParamValue = (
 };
 
 const replaceParamsValuesInNunitTest = (
-    iteration: { [key: string]: string },
-    envParams: { [key: string]: string },
+    iteration: Map<string, string>,
+    envParams: Map<string, string>,
     test: OctaneTest
 ): OctaneTest => {
     const result = {
@@ -168,17 +166,17 @@ const replaceParamsValuesInNunitTest = (
     }
     return result;
 };
-const getEnvironmentVariables = (): { [key: string]: string } => {
-    let envParams: { [key: string]: string } = {};
+const getEnvironmentVariables = (): Map<string, string> => {
+    let envParams: Map<string, string> = new Map<string, string>();
     for (let envParam in process.env) {
         let envParamValue = process.env[envParam];
-        envParams[envParam] = envParamValue!;
+        envParams.set(envParam, envParamValue!);
     }
     return envParams;
 };
 const replaceParamsValuesInJunitTest = (
-    iteration: { [key: string]: string },
-    envParams: { [key: string]: string },
+    iteration: Map<string, string>,
+    envParams: Map<string, string>,
     test: OctaneTest
 ): OctaneTest => {
     const result = {
@@ -210,8 +208,8 @@ const replaceParamsValuesInJunitTest = (
 };
 
 const replaceParamsValuesInProcessExecutorTest = (
-    iteration: { [key: string]: string },
-    envParams: { [key: string]: string },
+    iteration: Map<string, string>,
+    envParams: Map<string, string>,
     test: OctaneTest
 ): OctaneTest => {
     const result = {
@@ -251,7 +249,7 @@ const replaceParamsValuesInProcessExecutorTest = (
 };
 
 async function getModifiedCSVBytes(
-    iterationsWithReplacedParams: { [p: string]: string }[]
+    iterationsWithReplacedParams: Map<string, string>[]
 ) {
     let csvString = '';
     for (let param in iterationsWithReplacedParams[0]) {
@@ -261,7 +259,7 @@ async function getModifiedCSVBytes(
     for (let iteration of iterationsWithReplacedParams) {
         csvString = `${csvString}\n`;
         for (let param in iteration) {
-            csvString = `${csvString}"${iteration[param]}",`;
+            csvString = `${csvString}"${iteration.get(param)}",`;
         }
         csvString = `${csvString.substring(0, csvString.length - 1)}`;
     }
@@ -275,85 +273,106 @@ const getPredefinedParameters = async (
     suiteRunId: string,
     timestamp: string,
     sourceControlProfile: SourceControlProfile | undefined
-): Promise<{ [key: string]: string }> => {
-    let predefinedParameters: { [key: string]: string } = {};
-    predefinedParameters['#sctm_regular_execdef_run_id'] = suiteRunId;
-    if (test.source_type_udf === 'process executor test' || test.source_type_udf === 'keyword driven test') {
-        predefinedParameters['#sctm_exec_sourcesfolder'] = path.resolve(getResultsFolder(test, timestamp, undefined));
+): Promise<Map<string, string>> => {
+    let predefinedParameters: Map<string, string> = new Map<string, string>();
+    predefinedParameters.set('#sctm_regular_execdef_run_id', suiteRunId);
+    if (
+        test.source_type_udf === 'process executor test' ||
+        test.source_type_udf === 'keyword driven test'
+    ) {
+        predefinedParameters.set(
+            '#sctm_exec_sourcesfolder',
+            path.resolve(getResultsFolder(test, timestamp, undefined))
+        );
     } else {
-        predefinedParameters['#sctm_exec_sourcesfolder'] = path.resolve(getSourcesFolder(test));
+        predefinedParameters.set(
+            '#sctm_exec_sourcesfolder',
+            path.resolve(getSourcesFolder(test))
+        );
     }
     if (testContainerAppModule.sc_product_name_udf) {
-        predefinedParameters['#sctm_product'] =
-            testContainerAppModule.sc_product_name_udf;
+        predefinedParameters.set(
+            '#sctm_product',
+            testContainerAppModule.sc_product_name_udf
+        );
     }
     if (sourceControlProfile) {
-        predefinedParameters['#sctm_source_root_dir'] =
+        predefinedParameters.set(
+            '#sctm_source_root_dir',
             sourceControlProfile.getAbsoluteWorkingFolderPath(
                 getSourcesFolder(test)
-            );
+            )
+        );
     }
-    let testRelatedParameters: { [key: string]: string } = getTestRelatedParameters(test);
-    let testSuiteRelatedParameters: { [key: string]: string } = await getTestSuiteRelatedParameters(testSuite);
+    let testRelatedParameters: Map<string, string> =
+        getTestRelatedParameters(test);
+    let testSuiteRelatedParameters: Map<string, string> =
+        await getTestSuiteRelatedParameters(testSuite);
 
-    for (let param in testRelatedParameters) {
-        predefinedParameters[param] = testRelatedParameters[param];
-    }
+    testRelatedParameters.forEach((value, key) => {
+        predefinedParameters.set(key, testRelatedParameters.get(key)!);
+    });
 
-    for (let param in testSuiteRelatedParameters) {
-        predefinedParameters[param] = testSuiteRelatedParameters[param];
-    }
+    testSuiteRelatedParameters.forEach((value, key) => {
+        predefinedParameters.set(key, testSuiteRelatedParameters.get(key)!);
+    });
 
     return predefinedParameters;
 };
 
-const getTestRelatedParameters = (
-    test: OctaneTest
-): { [key: string]: string } => {
-    let testParameters: { [key: string]: string } = {};
-    testParameters['#sctm_data_driven_parent_test_name'] = extractName(
-        test.name
+const getTestRelatedParameters = (test: OctaneTest): Map<string, string> => {
+    let testParameters: Map<string, string> = new Map<string, string>();
+    testParameters.set(
+        '#sctm_data_driven_parent_test_name',
+        extractName(test.name)
     );
-    testParameters['#sctm_test_name'] = extractName(test.name);
-    testParameters['#sctm_test_id'] = test.id;
-    testParameters['#sctm_data_driven_parent_test_id'] = test.id;
+    testParameters.set('#sctm_test_name', extractName(test.name));
+    testParameters.set('#sctm_test_id', test.id);
+    testParameters.set('#sctm_data_driven_parent_test_id', test.id);
     if (test.source_id_udf) {
-        testParameters['#sctm_test_id'] = test.source_id_udf;
-        testParameters['#sctm_data_driven_parent_test_id'] = test.source_id_udf;
+        testParameters.set('#sctm_test_id', test.source_id_udf);
+        testParameters.set(
+            '#sctm_data_driven_parent_test_id',
+            test.source_id_udf
+        );
     }
     if (test.external_test_id) {
-        testParameters['#external_id'] = test.external_test_id;
+        testParameters.set('#external_id', test.external_test_id);
     }
     return testParameters;
 };
 
 const getTestSuiteRelatedParameters = async (
     testSuite: OctaneTestSuite
-): Promise<{ [key: string]: string }> => {
-    let testSuiteParameters: { [key: string]: string } = {};
-    testSuiteParameters['#sctm_execdef_name'] = testSuite.name;
-    testSuiteParameters['#sctm_execdef_id'] = testSuite.id;
-    testSuiteParameters['#sctm_keywords'] = '';
-    testSuiteParameters['#sctm_build'] = '';
-    testSuiteParameters['#sctm_version'] = '';
+): Promise<Map<string, string>> => {
+    let testSuiteParameters: Map<string, string> = new Map<string, string>();
+    testSuiteParameters.set('#sctm_execdef_name', testSuite.name);
+    testSuiteParameters.set('#sctm_execdef_id', testSuite.id);
+    testSuiteParameters.set('#sctm_keywords', '');
+    testSuiteParameters.set('#sctm_build', '');
+    testSuiteParameters.set('#sctm_version', '');
     if (testSuite.source_id_udf) {
-        testSuiteParameters['#sctm_execdef_id'] = testSuite.source_id_udf;
+        testSuiteParameters.set('#sctm_execdef_id', testSuite.source_id_udf);
     }
     if (
         testSuite.sc_exec_keywords_udf &&
         testSuite.sc_exec_keywords_udf.length > 0
     ) {
-        testSuiteParameters['#sctm_keywords'] =
-            await getOctaneListNodesAsString(testSuite.sc_exec_keywords_udf);
+        testSuiteParameters.set(
+            '#sctm_keywords',
+            await getOctaneListNodesAsString(testSuite.sc_exec_keywords_udf)
+        );
     }
     if (testSuite.silk_release_build_udf) {
-        testSuiteParameters['#sctm_build'] = extractBuildVersion(
-            testSuite.silk_release_build_udf.name
+        testSuiteParameters.set(
+            '#sctm_build',
+            extractBuildVersion(testSuite.silk_release_build_udf.name)
         );
     }
     if (testSuite.silk_release_version_udf) {
-        testSuiteParameters['#sctm_version'] = extractBuildVersion(
-            testSuite.silk_release_version_udf.name
+        testSuiteParameters.set(
+            '#sctm_version',
+            extractBuildVersion(testSuite.silk_release_version_udf.name)
         );
     }
 
@@ -392,14 +411,14 @@ const extractBuildVersion = (name: string): string => {
 const getParameters = async (
     test: OctaneTest | OctaneTestSuite,
     attachmentName: string
-): Promise<{ [key: string]: string }> => {
-    let parameters: { [key: string]: string } = {};
+): Promise<Map<string, string>> => {
+    let parameters: Map<string, string> = new Map<string, string>();
     const csvParametersAttachmentContent: Buffer | undefined =
         await getAttachmentContentByName(test, attachmentName);
 
     if (csvParametersAttachmentContent) {
-        let iterations: { [key: string]: string }[] = await csv().fromString(
-            csvParametersAttachmentContent.toString()
+        const iterations = await getCsvAsMapArray(
+            csvParametersAttachmentContent
         );
         if (iterations[0] !== undefined) {
             parameters = iterations[0];
@@ -407,66 +426,88 @@ const getParameters = async (
     }
 
     return parameters;
-}
+};
 
 const mergeParameters = (
-    predefinedParameters: { [key: string]: string },
-    execPlanParameters: { [key: string]: string },
-    customParameters: { [key: string]: string }
-): { [key: string]: string } => {
-    let mergedParameters: { [key: string]: string } = customParameters;
-    for (let param in execPlanParameters) {
-        mergedParameters[param] = execPlanParameters[param];
-    }
-    for (let param in predefinedParameters) {
-        mergedParameters[param] = predefinedParameters[param];
-    }
+    predefinedParameters: Map<string, string>,
+    execPlanParameters: Map<string, string>,
+    customParameters: Map<string, string>
+): Map<string, string> => {
+    let mergedParameters: Map<string, string> = customParameters;
+    execPlanParameters.forEach((value, key) => {
+        mergedParameters.set(key, execPlanParameters.get(key)!);
+    });
+
+    predefinedParameters.forEach((value, key) => {
+        mergedParameters.set(key, predefinedParameters.get(key)!);
+    });
 
     return mergedParameters;
-}
+};
 
-const getTestParameters = async (test: OctaneTest,
-                                 testContainerAppModule: OctaneApplicationModule,
-                                 suiteId: string,
-                                 suiteRunId: string,
-                                 timestamp: string,
-                                 sourceControlProfile: SourceControlProfile | undefined
-): Promise<{ [key: string]: string }[]> => {
+const getTestParameters = async (
+    test: OctaneTest,
+    testContainerAppModule: OctaneApplicationModule,
+    suiteId: string,
+    suiteRunId: string,
+    timestamp: string,
+    sourceControlProfile: SourceControlProfile | undefined
+): Promise<Map<string, string>[]> => {
     let testSuite: OctaneTestSuite = await getTestSuiteById(suiteId);
-    let predefinedParams: { [key: string]: string } = await getPredefinedParameters(test, testContainerAppModule,
-        testSuite, suiteRunId, timestamp, sourceControlProfile);
-    let execPlanParameters: { [key: string]: string } = await getParameters(testSuite, 'SC_parameters.csv');
-    let customParameters: { [key: string]: string } = await getParameters(test, 'SC_custom_parameters.csv');
-    let mergedParameters: { [key: string]: string } = mergeParameters(
+    let predefinedParams: Map<string, string> = await getPredefinedParameters(
+        test,
+        testContainerAppModule,
+        testSuite,
+        suiteRunId,
+        timestamp,
+        sourceControlProfile
+    );
+    let execPlanParameters: Map<string, string> = await getParameters(
+        testSuite,
+        'SC_parameters.csv'
+    );
+    let customParameters: Map<string, string> = await getParameters(
+        test,
+        'SC_custom_parameters.csv'
+    );
+    let mergedParameters: Map<string, string> = mergeParameters(
         predefinedParams,
         execPlanParameters,
         customParameters
     );
     const csvParametersAttachmentContent: Buffer | undefined =
-        await getAttachmentContentByName(
-            test,
-            'SC_dataset.csv'
-        );
+        await getAttachmentContentByName(test, 'SC_dataset.csv');
 
+    let iterations: Map<string, string>[] = [];
 
-    let iterations: { [key: string]: string }[] = [];
-
-    if (csvParametersAttachmentContent && test.sc_enable_data_driven_udf !== undefined
-    && test.sc_enable_data_driven_udf) {
-        iterations = await csv().fromString(
-            csvParametersAttachmentContent.toString()
+    if (
+        csvParametersAttachmentContent &&
+        test.sc_enable_data_driven_udf !== undefined &&
+        test.sc_enable_data_driven_udf
+    ) {
+        const iterations = await getCsvAsMapArray(
+            csvParametersAttachmentContent
         );
 
         let testHasIterations: boolean = iterations.length > 1;
         for (let i = 0; i < iterations.length; i++) {
             const iteration = iterations[i];
-            for (let predefinedParam in mergedParameters) {
-                iteration[predefinedParam] = mergedParameters[predefinedParam];
-            }
+            mergedParameters.forEach((value, key) => {
+                iteration.set(key, mergedParameters.get(key)!);
+            });
             if (testHasIterations) {
-                iteration['#sctm_test_name'] = i + ' (' + iteration['#sctm_test_name'] + ')';
-                if (test.source_type_udf === 'process executor test' || test.source_type_udf === 'keyword driven test') {
-                    iteration['#sctm_exec_sourcesfolder'] = path.resolve(getResultsFolder(test, timestamp, i));
+                iteration.set(
+                    '#sctm_test_name',
+                    i + ' (' + iteration.get('#sctm_test_name') + ')'
+                );
+                if (
+                    test.source_type_udf === 'process executor test' ||
+                    test.source_type_udf === 'keyword driven test'
+                ) {
+                    iteration.set(
+                        '#sctm_exec_sourcesfolder',
+                        path.resolve(getResultsFolder(test, timestamp, i))
+                    );
                 }
             }
         }
@@ -475,7 +516,7 @@ const getTestParameters = async (test: OctaneTest,
     }
 
     return iterations;
-}
+};
 
 const getTestNames = (testsToRun: string): string[] => {
     const tests: string[] = testsToRun.split('||');
@@ -490,19 +531,37 @@ const getTestNames = (testsToRun: string): string[] => {
 };
 
 const getJavaExecutablePath = (test: OctaneTest): string => {
-  if (test.sc_java_home_udf) {
-      return `${test.sc_java_home_udf}${path.sep}bin${path.sep}java`;
-  } else
-      return  'java';
+    if (test.sc_java_home_udf) {
+        return `${test.sc_java_home_udf}${path.sep}bin${path.sep}java`;
+    } else return 'java';
 };
 
 const getJVMOptions = (test: OctaneTest): string => {
-  if (test.sc_jvm_options_udf) {
-      return test.sc_jvm_options_udf.replace(/\s\s+/g, ' ');
-  } else {
-      return DEFAULT_VM_ARGS;
-  }
+    if (test.sc_jvm_options_udf) {
+        return test.sc_jvm_options_udf.replace(/\s\s+/g, ' ');
+    } else {
+        return DEFAULT_VM_ARGS;
+    }
+};
 
+const getCsvAsMapArray = async (
+    csvAttachment: Buffer
+): Promise<Map<string, string>[]> => {
+    const options = {
+        flatKeys: true
+    };
+
+    const csvAsArray: object[] = await csv(options).fromString(
+        csvAttachment.toString()
+    );
+
+    return csvAsArray.map(iterationObj => {
+        const iteration = new Map<string, string>();
+        for (const [key, value] of Object.entries(iterationObj)) {
+            iteration.set(key, value);
+        }
+        return iteration;
+    });
 };
 
 export {

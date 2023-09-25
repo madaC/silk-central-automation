@@ -101,11 +101,11 @@ const createCommand = (
     //the command should always be in one line
     let command;
     if (!methodName && !classNames) {
-        command = `"${javaPath}" ${jvmOptions} -cp "${absoluteClasspath};${runnerJarPath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper RunMeAsAJar null ${octaneTestName} ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
+        command = `"${javaPath}" ${jvmOptions} -cp "${absoluteClasspath};${runnerJarPath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper RunMeAsAJar null "${octaneTestName}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
     } else if (!methodName && classNames && classNames.split(' ').length > 0) {
-        command = `"${javaPath}" ${jvmOptions} -cp "${absoluteClasspath};${runnerJarPath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper "${classNames}" null ${octaneTestName} ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
+        command = `"${javaPath}" ${jvmOptions} -cp "${absoluteClasspath};${runnerJarPath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper "${classNames}" null "${octaneTestName}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
     } else if (methodName && classNames && classNames.split(' ').length > 0) {
-        command = `"${javaPath}" ${jvmOptions} -cp "${absoluteClasspath};${runnerJarPath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper "${classNames}" "${methodName}" ${octaneTestName} ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
+        command = `"${javaPath}" ${jvmOptions} -cp "${absoluteClasspath};${runnerJarPath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper "${classNames}" "${methodName}" "${octaneTestName}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
     } else {
         throw new Error(
             'Could not create execution command for Octane automated test of type JUnit with name' +
@@ -139,15 +139,15 @@ const generateExecutableFile = async (
             );
         const timestamp: string = format(Date.now(), "yyyy-MM-dd_HH-mm-ss-ll");
         const environmentParams = getEnvironmentVariables();
-        let parameters: { [key: string]: string }[] = await getTestParameters(test, testContainerAppModule, suiteId,
+        let parameters: Map<string, string>[] = await getTestParameters(test, testContainerAppModule, suiteId,
             suiteRunId, timestamp, sourceControlProfile);
 
         for (const parameterRow of parameters) {
             let parametersForCommand = '';
             for (let param in parameterRow) {
-                parametersForCommand = `${parametersForCommand} "-D${param}=${parameterRow[param]}"`;
+                parametersForCommand = `${parametersForCommand} "-D${param}=${parameterRow.get(param)}"`;
             }
-            parameterRow['parametersForJavaCommand'] = parametersForCommand;
+            parameterRow.set('parametersForJavaCommand', parametersForCommand);
         }
 
         const iterationsWithReplacedParams = await replaceParametersReferences(
@@ -173,7 +173,7 @@ const generateExecutableFile = async (
                 testName,
                 runnerJarPath,
                 testWithParams,
-                iteration['parametersForJavaCommand'],
+                iteration.get('parametersForJavaCommand')!,
                 testContainerAppModule,
                 sourceControlProfile,
                 timestamp,

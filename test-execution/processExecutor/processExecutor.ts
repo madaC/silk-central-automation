@@ -48,7 +48,7 @@ const generateExecutableFile = async (
 
         const timestamp: string = format(Date.now(), "yyyy-MM-dd_HH-mm-ss-ll");
         const environmentParams = getEnvironmentVariables();
-        let parameters: { [key: string]: string }[] = await getTestParameters(
+        let parameters: Map<string, string>[] = await getTestParameters(
             test,
             testContainerAppModule,
             suiteId,
@@ -97,9 +97,9 @@ const getCommand = async (
     iterationIndex: number |undefined
 ): Promise<string> => {
     if (test.sc_working_folder_udf && path.isAbsolute(test.sc_working_folder_udf)) {
-        return `java -cp "${runnerJarPath}" com.microfocus.adm.almoctane.migration.plugin_silk_central.process.executor.ProcessExecutor "${test.sc_working_folder_udf}" ${test.name} ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''} ${test.sc_executable_name_udf?.replace(/"/g, '\\"')} ${test.sc_argument_list_udf?.replace(/"/g, '\\"')}`;
+        return `java -cp "${runnerJarPath}" com.microfocus.adm.almoctane.migration.plugin_silk_central.process.executor.ProcessExecutor "${test.sc_working_folder_udf}" "${test.name}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''} ${test.sc_executable_name_udf?.replace(/"/g, '\\"')} ${test.sc_argument_list_udf?.replace(/"/g, '\\"')}`;
     }
-    return `java -cp "${runnerJarPath}" com.microfocus.adm.almoctane.migration.plugin_silk_central.process.executor.ProcessExecutor null ${test.name} ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''} ${test.sc_executable_name_udf?.replace(/"/g,'\\"')} ${test.sc_argument_list_udf?.replace(/"/g, '\\"')}`;
+    return `java -cp "${runnerJarPath}" com.microfocus.adm.almoctane.migration.plugin_silk_central.process.executor.ProcessExecutor null "${test.name}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''} ${test.sc_executable_name_udf?.replace(/"/g,'\\"')} ${test.sc_argument_list_udf?.replace(/"/g, '\\"')}`;
 };
 
 const testsToRun = process.argv[2];
