@@ -7,7 +7,7 @@ pipeline{
     }
     parameters {
         string(name: 'testsToRun',description: '' )
-        string(name: 'runnerJarPath', defaultValue: '', description: "")
+        string(name: 'runnerJarPath', defaultValue: 'C:\\Test-Execution-silk-Central\\octane-shift-execution-wrapper-4.37-SNAPSHOT.jar', description: "")
         string(name: 'suiteId',description: '' )
         string(name: 'suiteRunId',description: '' )
     }
@@ -36,7 +36,7 @@ pipeline{
             }
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: '', usernameVariable: 'username', passwordVariable: 'password')]) {
+                    withCredentials([usernamePassword(credentialsId: '6cfdfdfd-819b-49cb-9b55-64b7c444326b', usernameVariable: 'username', passwordVariable: 'password')]) {
                         dir('test-execution') {
                             bat 'npm install'
                             bat 'npm run build'
