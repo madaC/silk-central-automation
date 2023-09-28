@@ -1,6 +1,6 @@
 mkdir build
 $TESTS_TO_RUN_XML = $env:testsToRunConverted -replace ('\${workspace}', -join($env:WORKSPACE, "\test-execution"))
-$WORKSPACE_ESCAPED = $env:WORKSPACE -replace ('\\', '\\')
+$WORKSPACE_ESCAPED = $env:WORKSPACE -replace ('\\', '\\') -replace (' ', '%20')
 Set-Content -Path ./build/testsToRun.mtbx -Value $TESTS_TO_RUN_XML
 Set-Content -Path ./build/Props.txt -Value "runType=FileSystem"
 Add-Content -Path ./build/Props.txt -Value "resultUnifiedTestClassname=true"
