@@ -78,6 +78,42 @@ const getJunitOctaneTestByName = async (
     };
 };
 
+const getUFTOctaneTestByName = async (
+    testName: string,
+    className: string
+): Promise<OctaneTest> => {
+    const query = Query.field('name')
+        .equal(testName)
+        .and(Query.field('class_name').equal(className))
+        .and(Query.field('package').equal(Query.NULL))
+        .and(Query.field('component').equal(Query.NULL));
+    const octaneResponse = await octane
+        .get(Octane.entityTypes.tests)
+        .fields(
+            'name',
+            'attachments',
+            'application_modules',
+            'sc_enable_data_driven_udf',
+        )
+        .query(query.build())
+        .execute();
+    if (octaneResponse.data[0] === undefined) {
+        throw new Error(
+            `Not found! Automated test with name ${testName} does not exist in Octane.`
+        );
+    }
+    return <OctaneTest>{
+        ...octaneResponse.data[0],
+        attachments: <OctaneAttachment[]>(
+            octaneResponse.data[0].attachments.data
+        ),
+        application_modules: <OctaneApplicationModule[]>(
+            octaneResponse.data[0].application_modules.data
+        )
+    };
+};
+
+
 const getOctaneKDTByName = async (testName: string): Promise<OctaneTest> => {
     const query = Query.field('name')
         .equal(testName)
@@ -256,6 +292,7 @@ const deserializeSourceControlDetails = (
     switch (sourceControlProfile.Type) {
         case 'Git':
             return new GitProfile(
+                sourceControlProfile.id,
                 sourceControlProfile.ProfileName,
                 sourceControlProfile.Type,
                 sourceControlProfile.RootNode,
@@ -266,6 +303,7 @@ const deserializeSourceControlDetails = (
             );
         case 'Subversion':
             return new SubversionProfile(
+                sourceControlProfile.id,
                 sourceControlProfile.ProfileName,
                 sourceControlProfile.Type,
                 sourceControlProfile.RootNode,
@@ -275,6 +313,7 @@ const deserializeSourceControlDetails = (
             );
         case 'UNC':
             return new UNCProfile(
+                sourceControlProfile.id,
                 sourceControlProfile.ProfileName,
                 sourceControlProfile.Type,
                 sourceControlProfile.path,
@@ -283,6 +322,7 @@ const deserializeSourceControlDetails = (
             );
         case 'VFS':
             return new VFSProfile(
+                sourceControlProfile.id,
                 sourceControlProfile.ProfileName,
                 sourceControlProfile.Type,
                 sourceControlProfile.RootNode,
@@ -454,5 +494,6 @@ export {
     getAttachmentContentById,
     getOctaneKDTByName,
     getTestSuiteById,
-    getOctaneProcessExecutorTestByName
+    getOctaneProcessExecutorTestByName,
+    getUFTOctaneTestByName
 };

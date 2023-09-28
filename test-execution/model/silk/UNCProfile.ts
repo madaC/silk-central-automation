@@ -22,17 +22,18 @@ export default class UNCProfile extends SourceControlProfile {
     UNCPath: string;
 
     constructor(
+        id: string,
         name: string,
         type: string,
         UNCPath: string,
         rootNode: string,
         workingFolder: string
     ) {
-        super(name, type, rootNode, workingFolder);
+        super(id, name, type, rootNode, workingFolder);
         this.UNCPath = UNCPath;
     }
 
-    createClasspathFolder(
+    fetchResources(
         rootWorkingFolder: string,
         credentials?: Credentials
     ): void {

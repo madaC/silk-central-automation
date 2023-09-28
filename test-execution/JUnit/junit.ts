@@ -51,7 +51,7 @@ const getCommand = async (
     let absoluteClasspath;
     if (sourceControlProfile) {
         const rootWorkingFolder = getSourcesFolder(test);
-        await sourceControlProfile!.createClasspathFolder(
+        await sourceControlProfile!.fetchResources(
             rootWorkingFolder,
             credentials
         );
@@ -101,11 +101,11 @@ const createCommand = (
     //the command should always be in one line
     let command;
     if (!methodName && !classNames) {
-        command = `"${javaPath}" ${jvmOptions} -cp "${absoluteClasspath};${runnerJarPath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper RunMeAsAJar null "${octaneTestName}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
+        command = `"${javaPath}" ${jvmOptions} -cp "${runnerJarPath};${absoluteClasspath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper RunMeAsAJar null "${octaneTestName}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
     } else if (!methodName && classNames && classNames.split(' ').length > 0) {
-        command = `"${javaPath}" ${jvmOptions} -cp "${absoluteClasspath};${runnerJarPath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper "${classNames}" null "${octaneTestName}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
+        command = `"${javaPath}" ${jvmOptions} -cp "${runnerJarPath};${absoluteClasspath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper "${classNames}" null "${octaneTestName}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
     } else if (methodName && classNames && classNames.split(' ').length > 0) {
-        command = `"${javaPath}" ${jvmOptions} -cp "${absoluteClasspath};${runnerJarPath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper "${classNames}" "${methodName}" "${octaneTestName}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
+        command = `"${javaPath}" ${jvmOptions} -cp "${runnerJarPath};${absoluteClasspath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper "${classNames}" "${methodName}" "${octaneTestName}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
     } else {
         throw new Error(
             'Could not create execution command for Octane automated test of type JUnit with name' +

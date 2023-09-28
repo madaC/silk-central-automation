@@ -26,6 +26,7 @@ export default class GitProfile extends SourceControlProfile {
     private readonly _url: string;
 
     constructor(
+        id: string,
         name: string,
         type: string,
         rootNode: string,
@@ -34,7 +35,7 @@ export default class GitProfile extends SourceControlProfile {
         url: string,
         workingFolder: string
     ) {
-        super(name, type, rootNode, workingFolder);
+        super(id, name, type, rootNode, workingFolder);
         this._projectPath = projectPath;
         this.branch = branch;
         this._url = url;
@@ -44,7 +45,7 @@ export default class GitProfile extends SourceControlProfile {
         return this._url.replace(/\\/g, '/');
     }
 
-    createClasspathFolder(
+    fetchResources(
         rootWorkingFolder: string,
         credentials: Credentials
     ): void {

@@ -23,6 +23,7 @@ export default class SubversionProfile extends SourceControlProfile {
     private readonly _url: string;
 
     constructor(
+        id: string,
         name: string,
         type: string,
         rootNode: string,
@@ -30,7 +31,7 @@ export default class SubversionProfile extends SourceControlProfile {
         url: string,
         workingFolder: string
     ) {
-        super(name, type, rootNode, workingFolder);
+        super(id, name, type, rootNode, workingFolder);
         this._projectPath = projectPath;
         this._url = url;
     }
@@ -39,7 +40,7 @@ export default class SubversionProfile extends SourceControlProfile {
         return this._url.replace(/\\/g, '/');
     }
 
-    createClasspathFolder(
+    fetchResources(
         rootWorkingFolder: string,
         credentials: Credentials
     ): void {

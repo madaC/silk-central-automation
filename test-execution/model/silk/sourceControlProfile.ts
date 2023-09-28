@@ -16,19 +16,21 @@
 import Credentials from '../credentials';
 
 export default abstract class SourceControlProfile {
+    public id: string;
     public name: string;
     public Type: string;
     public _rootNode?: string;
     public WorkingFolder: string;
 
-    abstract createClasspathFolder(
+    abstract fetchResources(
         rootWorkingFolder: string,
         credentials?: Credentials
     ): void;
 
     abstract getAbsoluteWorkingFolderPath(rootWorkingFolder: string): string;
 
-    protected constructor(name: string, type: string, rootNode: string, workingFolder: string) {
+    protected constructor(id: string, name: string, type: string, rootNode: string, workingFolder: string) {
+        this.id = id;
         this.name = name;
         this.Type = type;
         this._rootNode = rootNode;

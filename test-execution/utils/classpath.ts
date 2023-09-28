@@ -29,11 +29,11 @@ const getAbsoluteClasspath = (
         if (
             path.isAbsolute(value) &&
             path.resolve(value) === path.normalize(value) &&
-            (sourceControlWorkingFolder === undefined || sourceControlWorkingFolder == '' || !path.resolve(value).startsWith(sourceControlWorkingFolder))
+            (sourceControlWorkingFolder === undefined || sourceControlWorkingFolder === '' || !path.resolve(value.toLowerCase()).startsWith(sourceControlWorkingFolder.toLowerCase()))
         ) {
             testsClasspath += value;
         } else {
-            if (sourceControlWorkingFolder !== undefined && sourceControlWorkingFolder !== '' && path.resolve(value).startsWith(sourceControlWorkingFolder)) {
+            if (sourceControlWorkingFolder !== undefined && sourceControlWorkingFolder !== '' && path.resolve(value.toLowerCase()).startsWith(sourceControlWorkingFolder.toLowerCase())) {
                 value = path.resolve(value).substring(sourceControlWorkingFolder.length, value.length)
             }
             if (

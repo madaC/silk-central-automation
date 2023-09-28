@@ -53,7 +53,7 @@ const createCommand = async (
     let dllPath;
     if (sourceControlProfile) {
         const rootWorkingFolder = getSourcesFolder(test);
-        sourceControlProfile!.createClasspathFolder(
+        sourceControlProfile!.fetchResources(
             rootWorkingFolder,
             credentials
         );
