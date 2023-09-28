@@ -46,7 +46,6 @@ pipeline{
                             bat """npm run start-uft "${testsToRunConverted.replaceAll('\\R\\n','').replaceAll('\"','\'').replaceAll('FTToolsLauncher\\\\','')}" %suiteId% %suiteRunId% %username% %password%"""
                             bat 'echo "running tests..."'
                             bat 'powershell ./UFTExecutor.ps1'
-                            bat 'rmdir test_sources /s /q'
                         }
 
                     }
