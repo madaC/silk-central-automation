@@ -36,6 +36,11 @@ const createResources = async (
     if (!Array.isArray(mtbx.Mtbx.Test)) {
         array = new Array(array);
     }
+
+    if (fs.existsSync(ROOT_SOURCES_FOLDER)) {
+        fs.rmSync(ROOT_SOURCES_FOLDER, { recursive: true });
+    }
+    fs.mkdirSync(ROOT_SOURCES_FOLDER);
     for (const test of array) {
         const testName = test._attributes.name
         const classname = test._attributes.name.substring(0, test._attributes.name.lastIndexOf("\\\\"))
@@ -49,7 +54,6 @@ const createResources = async (
             );
 
         if (sourceControlProfile) {
-            fs.mkdirSync(ROOT_SOURCES_FOLDER);
             const rootWorkingFolder = `${ROOT_SOURCES_FOLDER}/source_control_${sourceControlProfile.id}`;
             await sourceControlProfile!.fetchResources(
                 rootWorkingFolder,
