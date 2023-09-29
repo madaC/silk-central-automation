@@ -7,7 +7,7 @@ pipeline{
     }
     parameters {
         string(name: 'testsToRun',description: '' )
-        string(name: 'runnerJarPath', defaultValue: 'C:\\Test-Execution-silk-Central\\octane-shift-execution-wrapper-4.45-SNAPSHOT.jar', description: "")
+        string(name: 'runnerJarPath', defaultValue: '', description: "")
         string(name: 'suiteId',description: '' )
         string(name: 'suiteRunId',description: '' )
     }
