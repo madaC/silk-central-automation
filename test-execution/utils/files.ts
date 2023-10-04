@@ -485,7 +485,7 @@ const getTestParameters = async (
         test.sc_enable_data_driven_udf !== undefined &&
         test.sc_enable_data_driven_udf
     ) {
-        const iterations = await getCsvAsMapArray(
+        iterations = await getCsvAsMapArray(
             csvParametersAttachmentContent
         );
 
