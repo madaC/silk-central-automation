@@ -1,7 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="ChangeListManager">
-    <list default="true" id="4e5b94df-3a3e-48c4-a55a-101ca11e1e31" name="Changes" comment="" />
+    <list default="true" id="4e5b94df-3a3e-48c4-a55a-101ca11e1e31" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/JUnit/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/JUnit/Jenkinsfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/KDT/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/KDT/Jenkinsfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/NUnit/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/NUnit/Jenkinsfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UFT/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/UFT/Jenkinsfile" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/UFTExecutor.ps1" beforeDir="false" afterPath="$PROJECT_DIR$/UFTExecutor.ps1" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/octane-details.properties" beforeDir="false" afterPath="$PROJECT_DIR$/octane-details.properties" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/octane-shift-execution-wrapper-4.49-SNAPSHOT.jar" beforeDir="false" afterPath="$PROJECT_DIR$/octane-shift-execution-wrapper-4.49-SNAPSHOT.jar" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/processExecutor/Jenkinsfile" beforeDir="false" afterPath="$PROJECT_DIR$/processExecutor/Jenkinsfile" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -20,6 +32,10 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "WebServerToolWindowFactoryState": "false",
     "last_opened_file_path": "D:/test-execution/silk-central-automation/test-execution",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
     "vue.rearranger.settings.migration": "true"
   }
@@ -33,6 +49,7 @@
       <option name="presentableId" value="Default" />
       <updated>1692781664786</updated>
       <workItem from="1692781665787" duration="208000" />
+      <workItem from="1696491452821" duration="745000" />
     </task>
     <servers />
   </component>
@@ -40,14 +57,9 @@
     <option name="version" value="3" />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
-    <option name="OPEN_GENERIC_TABS">
-      <map>
-        <entry key="240fb572-5b3b-4cd1-b2f0-7e4bcb952474" value="TOOL_WINDOW" />
-      </map>
-    </option>
     <option name="TAB_STATES">
       <map>
-        <entry key="240fb572-5b3b-4cd1-b2f0-7e4bcb952474">
+        <entry key="MAIN">
           <value>
             <State>
               <option name="FILTERS">
@@ -55,20 +67,12 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="HEAD" />
-                      </list>
-                    </value>
-                  </entry>
-                  <entry key="structure">
-                    <value>
-                      <list>
-                        <option value="dir:D:/test-execution/silk-central-automation/test-execution" />
+                        <option value="main" />
                       </list>
                     </value>
                   </entry>
                 </map>
               </option>
-              <option name="SHOW_ONLY_AFFECTED_CHANGES" value="true" />
             </State>
           </value>
         </entry>
