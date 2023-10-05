@@ -13,4 +13,5 @@ $resultsContent = Get-Content -Path ./build/Results.xml
 $WORKSPACE_PATH = -join($WORKSPACE_ESCAPED, "\\test-execution\\");
 $WORKSPACE_PATH2 = -join($WORKSPACE_ESCAPED2, "\\test-execution\\");
 $newResultContent = $resultsContent -replace('/','\') -replace ($WORKSPACE_PATH, '') -replace ($WORKSPACE_PATH2, '') -replace ('file:\\\\\\', '') -replace ('<\\','</') -replace ('\\>','/>') -replace('xmlns:xsi="[^"]*"','') -replace('xmlns:xsd="[^"]*"','') -replace ('package=\"FTToolsLauncher\"','')
+
 $newResultContent | Set-Content -Path ./build/Results.xml
