@@ -17,7 +17,7 @@ import fs from 'fs';
 import Credentials from '../model/credentials';
 import {
     deserializeSourceControlDetails, getAppModuleBySourceType,
-    getJunitOctaneTestByName,
+    getOctaneTestByName,
     validateOctaneJUnitTest
 } from '../utils/octaneClient.js';
 import SourceControlProfile from '../model/silk/sourceControlProfile';
@@ -34,6 +34,7 @@ import { getAbsoluteClasspath } from '../utils/classpath.js';
 import OctaneApplicationModule from '../model/octane/octaneApplicationModule';
 import OctaneTest from '../model/octane/octaneTest';
 import format from "dateformat";
+import {TestFields} from "../model/testFields.js";
 
 const getCommand = async (
     octaneTestName: string,
@@ -128,7 +129,7 @@ const generateExecutableFile = async (
 
     const testNames: string[] = getTestNames(testsToRun);
     for (const testName of testNames) {
-        const test = await getJunitOctaneTestByName(testName);
+        const test = await getOctaneTestByName(testName, TestFields.JUnit);
         validateOctaneJUnitTest(test, testName);
 
         const testContainerAppModule: OctaneApplicationModule =

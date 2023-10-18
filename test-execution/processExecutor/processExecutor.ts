@@ -22,13 +22,14 @@ import {
     replaceParametersReferences,
     replaceParamsValuesInProcessExecutorTest
 } from '../utils/files.js';
-import {getAppModuleBySourceType, getOctaneProcessExecutorTestByName} from '../utils/octaneClient.js';
+import {getAppModuleBySourceType, getOctaneTestByName} from '../utils/octaneClient.js';
 import fs from 'fs';
 import OctaneTest from '../model/octane/octaneTest';
 import OctaneApplicationModule from '../model/octane/octaneApplicationModule';
 import path from 'node:path';
 
 import format from 'dateformat';
+import {TestFields} from "../model/testFields.js";
 
 const generateExecutableFile = async (
     testsToRun: string,
@@ -39,7 +40,7 @@ const generateExecutableFile = async (
     cleanUpWorkingFiles();
     const testNames: string[] = getTestNames(testsToRun);
     for (const testName of testNames) {
-        const test : OctaneTest = await getOctaneProcessExecutorTestByName(testName);
+        const test : OctaneTest = await getOctaneTestByName(testName, TestFields.ProcessExecutor);
         const testContainerAppModule: OctaneApplicationModule =
             await getAppModuleBySourceType(
                 test,

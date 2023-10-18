@@ -26,11 +26,12 @@ import path from 'node:path';
 import {
     getAppModuleBySourceType,
     getAttachmentContentByName,
-    getOctaneKDTByName
+    getOctaneTestByName
 } from '../utils/octaneClient.js';
 import OctaneApplicationModule from '../model/octane/octaneApplicationModule';
 import OctaneTest from '../model/octane/octaneTest';
 import format from "dateformat";
+import {TestFields} from "../model/testFields.js";
 
 const getCommand = async (
     octaneTestName: string,
@@ -89,7 +90,7 @@ const generateExecutableFile = async (
 
     const testNames: string[] = getTestNames(testsToRun);
     for (const testName of testNames) {
-        const test = await getOctaneKDTByName(testName);
+        const test = await getOctaneTestByName(testName, TestFields.KDT);
         const command = await getCommand(testName, runnerJarPath, test);
 
         const testContainerAppModule: OctaneApplicationModule =

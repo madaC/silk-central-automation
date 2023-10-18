@@ -37,64 +37,22 @@ const octane = new Octane({
     password: properties.get('password')?.toString() || ''
 });
 
-const getJunitOctaneTestByName = async (
-    testName: string
-): Promise<OctaneTest> => {
-    const query = Query.field('name')
-        .equal(testName)
-        .and(Query.field('class_name').equal(Query.NULL))
-        .and(Query.field('package').equal(Query.NULL))
-        .and(Query.field('component').equal(Query.NULL));
-    const octaneResponse = await octane
-        .get(Octane.entityTypes.tests)
-        .fields(
-            'name',
-            'external_test_id',
-            'sc_class_names_udf',
-            'sc_method_name_udf',
-            'sc_classpath_udf',
-            'application_modules',
-            'attachments',
-            'sc_enable_data_driven_udf',
-            'source_type_udf',
-            'sc_java_home_udf',
-            'sc_jvm_options_udf'
-        )
-        .query(query.build())
-        .execute();
-    if (octaneResponse.data[0] === undefined) {
-        throw new Error(
-            `Not found! Automated test with name ${testName} does not exist in Octane.`
-        );
-    }
-    return <OctaneTest>{
-        ...octaneResponse.data[0],
-        attachments: <OctaneAttachment[]>(
-            octaneResponse.data[0].attachments.data
-        ),
-        application_modules: <OctaneApplicationModule[]>(
-            octaneResponse.data[0].application_modules.data
-        )
-    };
-};
 
-const getUFTOctaneTestByName = async (
+const getOctaneTestByName = async (
     testName: string,
-    className: string
+    testFields: string[],
+    className?: string
 ): Promise<OctaneTest> => {
+    testName = testName.replace("\"","\\\"").replace("\^","\\^").replace("\'","\\q")
+        .replace("{","\\{").replace("(","\\(").replace(")","\\)").replace("[","\\[").replace("?","\\?")
     const query = Query.field('name')
         .equal(testName)
-        .and(Query.field('class_name').equal(className))
+        .and(Query.field('class_name').equal(typeof className === 'undefined'? Query.NULL: className))
         .and(Query.field('package').equal(Query.NULL))
         .and(Query.field('component').equal(Query.NULL));
     const octaneResponse = await octane
         .get(Octane.entityTypes.tests)
-        .fields(
-            'name',
-            'attachments',
-            'application_modules',
-            'sc_enable_data_driven_udf',
-        )
+        .fields(...testFields)
         .query(query.build())
         .execute();
     if (octaneResponse.data[0] === undefined) {
@@ -113,80 +71,6 @@ const getUFTOctaneTestByName = async (
     };
 };
 
-
-const getOctaneKDTByName = async (testName: string): Promise<OctaneTest> => {
-    const query = Query.field('name')
-        .equal(testName)
-        .and(Query.field('class_name').equal(Query.NULL))
-        .and(Query.field('package').equal(Query.NULL))
-        .and(Query.field('component').equal(Query.NULL));
-    const octaneResponse = await octane
-        .get(Octane.entityTypes.tests)
-        .fields(
-            'name',
-            'external_test_id',
-            'attachments',
-            'application_modules',
-            'sc_enable_data_driven_udf',
-            'source_type_udf'
-        )
-        .query(query.build())
-        .execute();
-    if (octaneResponse.data[0] === undefined) {
-        throw new Error(
-            `Not found! Automated test with name ${testName} does not exist in Octane.`
-        );
-    }
-    return <OctaneTest>{
-        ...octaneResponse.data[0],
-        attachments: <OctaneAttachment[]>(
-            octaneResponse.data[0].attachments.data
-        ),
-        application_modules: <OctaneApplicationModule[]>(
-            octaneResponse.data[0].application_modules.data
-        )
-    };
-};
-
-const getOctaneProcessExecutorTestByName = async (
-    testName: string
-): Promise<OctaneTest> => {
-    const query = Query.field('name')
-        .equal(testName)
-        .and(Query.field('class_name').equal(Query.NULL))
-        .and(Query.field('package').equal(Query.NULL))
-        .and(Query.field('component').equal(Query.NULL));
-    const octaneResponse = await octane
-        .get(Octane.entityTypes.tests)
-        .fields(
-            'name',
-            'sc_executable_name_udf',
-            'external_test_id',
-            'sc_argument_list_udf',
-            'sc_working_folder_udf',
-            'sc_junit_result_udf',
-            'sc_enable_data_driven_udf',
-            'attachments',
-            'application_modules',
-            'source_type_udf'
-        )
-        .query(query.build())
-        .execute();
-    if (octaneResponse.data[0] === undefined) {
-        throw new Error(
-            `Not found! Automated test with name ${testName} does not exist in Octane.`
-        );
-    }
-    return <OctaneTest>{
-        ...octaneResponse.data[0],
-        attachments: <OctaneAttachment[]>(
-            octaneResponse.data[0].attachments.data
-        ),
-        application_modules: <OctaneApplicationModule[]>(
-            octaneResponse.data[0].application_modules.data
-        )
-    };
-};
 
 const getAppModuleBySourceType = async (
     test: OctaneTest,
@@ -341,47 +225,6 @@ const deserializeSourceControlDetails = (
     }
 };
 
-const getNunitOctaneTestByName = async (
-    testName: string
-): Promise<OctaneTest> => {
-    let query;
-    query = Query.field('name')
-        .equal(testName)
-        .and(Query.field('class_name').equal(Query.NULL))
-        .and(Query.field('package').equal(Query.NULL))
-        .and(Query.field('component').equal(Query.NULL));
-    const octaneResponse = await octane
-        .get(Octane.entityTypes.tests)
-        .fields(
-            'name',
-            'external_test_id',
-            'sc_nunit_assembly_udf',
-            'sc_nunit_directory_udf',
-            'sc_nunit_options_udf',
-            'application_modules',
-            'attachments',
-            'sc_enable_data_driven_udf',
-            'source_type_udf',
-            'sc_java_home_udf',
-            'sc_jvm_options_udf'
-        )
-        .query(query.build())
-        .execute();
-    if (octaneResponse.data[0] === undefined) {
-        throw new Error(
-            `Not found! Automated test with name ${testName} does not exist in Octane.`
-        );
-    }
-    return <OctaneTest>{
-        ...octaneResponse.data[0],
-        attachments: <OctaneAttachment[]>(
-            octaneResponse.data[0].attachments.data
-        ),
-        application_modules: <OctaneApplicationModule[]>(
-            octaneResponse.data[0].application_modules.data
-        )
-    };
-};
 
 const getTestSuiteById = async (suiteId: string): Promise<OctaneTestSuite> => {
     let query;
@@ -482,18 +325,14 @@ const extractOctaneListNode = async (
 }
 
 export {
-    getJunitOctaneTestByName,
     validateOctaneTest,
     validateOctaneJUnitTest,
-    getNunitOctaneTestByName,
     deserializeSourceControlDetails,
     getApplicationModuleIds,
     getAppModuleBySourceType,
     getAttachmentIds,
     getAttachmentContentByName,
     getAttachmentContentById,
-    getOctaneKDTByName,
     getTestSuiteById,
-    getOctaneProcessExecutorTestByName,
-    getUFTOctaneTestByName
+    getOctaneTestByName
 };

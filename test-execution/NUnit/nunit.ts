@@ -19,7 +19,7 @@ import Credentials from '../model/credentials';
 import NunitDirectories from '../model/nunitDirectories';
 import {
     deserializeSourceControlDetails,
-    getNunitOctaneTestByName,
+    getOctaneTestByName,
     getAppModuleBySourceType,
     validateOctaneTest
 } from '../utils/octaneClient.js';
@@ -37,6 +37,7 @@ import {
 } from '../utils/files.js';
 import OctaneApplicationModule from "../model/octane/octaneApplicationModule";
 import format from "dateformat";
+import {TestFields} from "../model/testFields.js";
 
 const NUNIT3_CONSOLE = 'nunit3-console.exe';
 
@@ -132,7 +133,7 @@ const getExecutableFile = async (
     const testNames: string[] = getTestNames(testsToRun);
 
     for (const testName of testNames) {
-        const test = await getNunitOctaneTestByName(testName);
+        const test = await getOctaneTestByName(testName,TestFields.NUnit);
         validateOctaneTest(test, testName);
 
         const testContainerAppModule: OctaneApplicationModule =

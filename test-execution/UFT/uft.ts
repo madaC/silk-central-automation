@@ -16,11 +16,12 @@
 import {ROOT_SOURCES_FOLDER} from "../utils/files.js";
 import {xml2json} from "xml-js";
 import OctaneApplicationModule from "../model/octane/octaneApplicationModule";
-import {deserializeSourceControlDetails, getAppModuleBySourceType, getUFTOctaneTestByName} from "../utils/octaneClient.js";
+import {deserializeSourceControlDetails, getAppModuleBySourceType, getOctaneTestByName} from "../utils/octaneClient.js";
 import SourceControlProfile from "../model/silk/sourceControlProfile";
 import Credentials from "../model/credentials";
 import OctaneTest from "../model/octane/octaneTest";
 import fs from "fs";
+import {TestFields} from "../model/testFields.js";
 
 
 const createResources = async (
@@ -42,9 +43,9 @@ const createResources = async (
     }
     fs.mkdirSync(ROOT_SOURCES_FOLDER);
     for (const test of array) {
-        const testName = test._attributes.name
+        const testName = test._attributes.name;
         const classname = test._attributes.name.substring(0, test._attributes.name.lastIndexOf("\\\\"))
-        const octaneUFTTest: OctaneTest = await getUFTOctaneTestByName(testName, classname);
+        const octaneUFTTest: OctaneTest = await getOctaneTestByName(testName,TestFields.UFT, classname);
 
         const testContainerAppModule: OctaneApplicationModule =
             await getAppModuleBySourceType(octaneUFTTest, 'test container');
