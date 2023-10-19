@@ -43,8 +43,9 @@ const getOctaneTestByName = async (
     testFields: string[],
     className?: string
 ): Promise<OctaneTest> => {
-    testName = testName.replace("\"","\\\"").replace("\^","\\^").replace("\'","\\q")
-        .replace("{","\\{").replace("(","\\(").replace(")","\\)").replace("[","\\[").replace("?","\\?")
+    testName = testName.replaceAll("\"", "\\\"").replaceAll("\^", "\\^").replaceAll("\'", "\\q")
+        .replaceAll("{", "\\{").replaceAll("(", "\\(").replaceAll(")", "\\)")
+        .replaceAll("[", "\\[").replaceAll("?", "\\?")
     const query = Query.field('name')
         .equal(testName)
         .and(Query.field('class_name').equal(typeof className === 'undefined'? Query.NULL: className))
