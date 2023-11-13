@@ -38,7 +38,7 @@ pipeline{
             steps {
                 convertTestsToRun format:'', framework: 'uft'
                 script {
-                    withCredentials([usernamePassword(credentialsId: '6cfdfdfd-819b-49cb-9b55-64b7c444326b', usernameVariable: 'username', passwordVariable: 'password')]) {
+                    withCredentials([usernamePassword(credentialsId: '', usernameVariable: 'username', passwordVariable: 'password')]) {
                         dir('test-execution') {
                             bat 'npm install'
                             bat 'npm run build'
@@ -46,12 +46,11 @@ pipeline{
                             bat """npm run start-uft "${testsToRunConverted.replaceAll('\\R\\n','').replaceAll('\"','\'').replaceAll('FTToolsLauncher\\\\','')}" %suiteId% %suiteRunId% %username% %password%"""
                             bat 'echo "running tests..."'
                             bat 'powershell ./UFTExecutor.ps1'
-                            bat 'rmdir test_sources /s /q'
                         }
 
                     }
                 }
-                archiveArtifacts artifacts: 'test-execution/build/Results.xml', onlyIfSuccessful: false
+                archiveArtifacts artifacts: 'test-execution/build/**', onlyIfSuccessful: false
                 junit allowEmptyResults: true, testResults: 'test-execution/build/Results.xml'
 
             }
@@ -61,11 +60,10 @@ pipeline{
     }
     post {
         always {
+            node(agentLabel) {
+                cleanWs()
+            }
             cleanWs()
-        }
-        aborted {
-            cleanWs()
-            bat 'echo abort'
         }
     }
 

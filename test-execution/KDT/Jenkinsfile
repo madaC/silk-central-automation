@@ -7,7 +7,7 @@ pipeline{
     }
     parameters {
         string(name: 'testsToRun',description: '' )
-        string(name: 'runnerJarPath', defaultValue: 'C:\\Test-Execution-silk-Central\\octane-shift-execution-wrapper-4.54-SNAPSHOT.jar', description: "")
+        string(name: 'runnerJarPath', defaultValue: '', description: "")
         string(name: 'suiteId',description: '' )
         string(name: 'suiteRunId',description: '' )
     }
@@ -46,11 +46,9 @@ pipeline{
                         } catch(err) {
                             bat 'echo Tests failed! Continue...'
                         }
-                        bat 'call echo "deleting test source files..."'
-                        bat 'rmdir test_sources /s /q'
                     }
                 }
-                archiveArtifacts artifacts: 'test-execution/java_command_to_execute.bat,test-execution/command_to_execute.bat,test-execution/testResults/**', onlyIfSuccessful: false
+                archiveArtifacts artifacts: 'test-execution/command_to_execute.bat,test-execution/testResults/**', onlyIfSuccessful: false
                 junit allowEmptyResults: true, testResults: 'test-execution/testResults/*/*.xml'
 
             }
@@ -60,11 +58,10 @@ pipeline{
     }
     post {
         always {
+            node(agentLabel) {
+              cleanWs()
+            }
             cleanWs()
-        }
-        aborted {
-            cleanWs()
-            bat 'echo abort'
         }
     }
 
