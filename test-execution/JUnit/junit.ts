@@ -28,7 +28,7 @@ import {
     getTestParameters,
     getSourcesFolder, getTestNames,
     replaceParametersReferences,
-    replaceParamsValuesInJunitTest, ROOT_SOURCES_FOLDER, getJavaExecutablePath, getJVMOptions
+    replaceParamsValuesInJunitTest, ROOT_SOURCES_FOLDER, getJavaExecutablePath, getJVMOptions, getRunnerJarAbsolutePath
 } from '../utils/files.js';
 import { getAbsoluteClasspath } from '../utils/classpath.js';
 import OctaneApplicationModule from '../model/octane/octaneApplicationModule';
@@ -38,7 +38,6 @@ import {TestFields} from "../model/testFields.js";
 
 const getCommand = async (
     octaneTestName: string,
-    runnerJarPath: string,
     test: OctaneTest,
     paramsForCommand: string,
     testContainerAppModule: OctaneApplicationModule,
@@ -76,7 +75,6 @@ const getCommand = async (
         octaneTestName,
         classNames,
         absoluteClasspath,
-        runnerJarPath,
         paramsForCommand,
         timestamp,
         isLastIteration,
@@ -91,7 +89,6 @@ const createCommand = (
     octaneTestName: string,
     classNames: string | null | undefined,
     absoluteClasspath: string,
-    runnerJarPath: string,
     paramsForCommand: string,
     timestamp: string,
     isLastIteration: boolean | undefined,
@@ -102,11 +99,11 @@ const createCommand = (
     //the command should always be in one line
     let command;
     if (!methodName && !classNames) {
-        command = `"${javaPath}" ${jvmOptions} -cp "${runnerJarPath};${absoluteClasspath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper RunMeAsAJar null "${octaneTestName}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
+        command = `"${javaPath}" ${jvmOptions} -cp "${getRunnerJarAbsolutePath()};${absoluteClasspath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper RunMeAsAJar null "${octaneTestName}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
     } else if (!methodName && classNames && classNames.split(' ').length > 0) {
-        command = `"${javaPath}" ${jvmOptions} -cp "${runnerJarPath};${absoluteClasspath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper "${classNames}" null "${octaneTestName}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
+        command = `"${javaPath}" ${jvmOptions} -cp "${getRunnerJarAbsolutePath()};${absoluteClasspath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper "${classNames}" null "${octaneTestName}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
     } else if (methodName && classNames && classNames.split(' ').length > 0) {
-        command = `"${javaPath}" ${jvmOptions} -cp "${runnerJarPath};${absoluteClasspath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper "${classNames}" "${methodName}" "${octaneTestName}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
+        command = `"${javaPath}" ${jvmOptions} -cp "${getRunnerJarAbsolutePath()};${absoluteClasspath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper "${classNames}" "${methodName}" "${octaneTestName}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
     } else {
         throw new Error(
             'Could not create execution command for Octane automated test of type JUnit with name' +
@@ -119,7 +116,6 @@ const createCommand = (
 
 const generateExecutableFile = async (
     testsToRun: string,
-    runnerJarPath: string,
     suiteId: string,
     suiteRunId: string,
     credentials?: Credentials
@@ -172,7 +168,6 @@ const generateExecutableFile = async (
             }
             const command = await getCommand(
                 testName,
-                runnerJarPath,
                 testWithParams,
                 iteration.get('parametersForJavaCommand')!,
                 testContainerAppModule,
@@ -191,15 +186,10 @@ const generateExecutableFile = async (
 let credentials: Credentials | undefined = undefined;
 
 const testsToRun = process.argv[2];
-const jarPath = process.argv[3];
-const suiteId = process.argv[4];
-const suiteRunId = process.argv[5];
-const username = process.argv[6];
-const password = process.argv[7];
-
-if (!testsToRun || !jarPath) {
-    throw new Error('testsToRun and jarPath parameters are mandatory!');
-}
+const suiteId = process.argv[3];
+const suiteRunId = process.argv[4];
+const username = process.argv[5];
+const password = process.argv[6];
 
 if (username && password) {
     credentials = {
@@ -208,6 +198,6 @@ if (username && password) {
     };
 }
 
-generateExecutableFile(testsToRun, jarPath, suiteId, suiteRunId, credentials)
+generateExecutableFile(testsToRun, suiteId, suiteRunId, credentials)
     .then(() => console.log('Executable file was successfully created.'))
     .catch(err => console.error(err.message, err));

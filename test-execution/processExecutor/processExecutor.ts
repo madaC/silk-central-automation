@@ -20,7 +20,7 @@ import {
     getTestParameters,
     getTestNames,
     replaceParametersReferences,
-    replaceParamsValuesInProcessExecutorTest
+    replaceParamsValuesInProcessExecutorTest, getRunnerJarAbsolutePath
 } from '../utils/files.js';
 import {getAppModuleBySourceType, getOctaneTestByName} from '../utils/octaneClient.js';
 import fs from 'fs';
@@ -33,7 +33,6 @@ import {TestFields} from "../model/testFields.js";
 
 const generateExecutableFile = async (
     testsToRun: string,
-    jarPath: string,
     suiteId: string,
     suiteRunId: string
 ): Promise<void> => {
@@ -78,7 +77,6 @@ const generateExecutableFile = async (
             }
             const command = await getCommand(
                 testName,
-                jarPath,
                 testWithParams,
                 timestamp,
                 isLastIteration,
@@ -91,27 +89,25 @@ const generateExecutableFile = async (
 
 const getCommand = async (
     octaneTestName: string,
-    runnerJarPath: string,
     test: OctaneTest,
     timestamp: string,
     isLastIteration: boolean |undefined,
     iterationIndex: number |undefined
 ): Promise<string> => {
     if (test.sc_working_folder_udf && path.isAbsolute(test.sc_working_folder_udf)) {
-        return `java -cp "${runnerJarPath}" com.microfocus.adm.almoctane.migration.plugin_silk_central.process.executor.ProcessExecutor "${test.sc_working_folder_udf}" "${test.name}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''} ${test.sc_executable_name_udf?.replace(/"/g, '\\"')} ${test.sc_argument_list_udf?.replace(/"/g, '\\"')}`;
+        return `java -cp "${getRunnerJarAbsolutePath()}" com.microfocus.adm.almoctane.migration.plugin_silk_central.process.executor.ProcessExecutor "${test.sc_working_folder_udf}" "${test.name}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''} ${test.sc_executable_name_udf?.replace(/"/g, '\\"')} ${test.sc_argument_list_udf?.replace(/"/g, '\\"') ?? ''}`;
     }
-    return `java -cp "${runnerJarPath}" com.microfocus.adm.almoctane.migration.plugin_silk_central.process.executor.ProcessExecutor null "${test.name}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''} ${test.sc_executable_name_udf?.replace(/"/g,'\\"')} ${test.sc_argument_list_udf?.replace(/"/g, '\\"')}`;
+    return `java -cp "${getRunnerJarAbsolutePath()}" com.microfocus.adm.almoctane.migration.plugin_silk_central.process.executor.ProcessExecutor null "${test.name}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''} ${test.sc_executable_name_udf?.replace(/"/g,'\\"')} ${test.sc_argument_list_udf?.replace(/"/g, '\\"') ?? ''}`;
 };
 
 const testsToRun = process.argv[2];
-const jarPath = process.argv[3];
-const suiteId = process.argv[4];
-const suiteRunId = process.argv[5];
+const suiteId = process.argv[3];
+const suiteRunId = process.argv[4];
 
 if (!testsToRun) {
     throw new Error('testsToRun parameter is mandatory!');
 }
 
-generateExecutableFile(testsToRun, jarPath, suiteId, suiteRunId)
+generateExecutableFile(testsToRun, suiteId, suiteRunId)
     .then(() => console.log('Executable file was successfully created.'))
     .catch(err => console.error(err.message, err));

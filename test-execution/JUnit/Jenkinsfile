@@ -6,8 +6,7 @@ pipeline{
         buildDiscarder(logRotator(numToKeepStr: '10', artifactNumToKeepStr: '10'))
     }
     parameters {
-      string(name: 'testsToRun',description: '' )
-        string(name: 'runnerJarPath', defaultValue: 'C:\\Test-Execution-silk-Central\\octane-shift-execution-wrapper-4.56-SNAPSHOT.jar', description: "")
+        string(name: 'testsToRun',description: '' )
         string(name: 'suiteId',description: '' )
         string(name: 'suiteRunId',description: '' )
     }
@@ -36,11 +35,11 @@ pipeline{
             }
             steps {
                 script {
-                    withCredentials([usernamePassword(credentialsId: '6cfdfdfd-819b-49cb-9b55-64b7c444326b', usernameVariable: 'username', passwordVariable: 'password')]) {
+                    withCredentials([usernamePassword(credentialsId: '', usernameVariable: 'username', passwordVariable: 'password')]) {
                         dir('test-execution') {
                             bat 'npm install'
                             bat 'npm run build'
-                            bat 'call npm run start "%testsToRun%" "%runnerJarPath%" %suiteId% %suiteRunId% %username% %password%'
+                            bat 'call npm run start "%testsToRun%" %suiteId% %suiteRunId% %username% %password%'
                             try {
                                 bat 'call echo "running tests..."'
                                 bat 'call command_to_execute.bat'

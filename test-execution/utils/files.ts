@@ -30,6 +30,7 @@ import path from 'path';
 const ROOT_SOURCES_FOLDER = 'test_sources';
 const TEST_RESULT_FILE = 'testResults';
 const EXECUTABLE_FILE = 'command_to_execute.bat';
+const RUNNER_JAR_NAME = 'octane-shift-execution-wrapper.jar';
 const DEFAULT_VM_ARGS = '-Xmx128m';
 const paramRegex = /\${([\S]+?)}/;
 
@@ -564,6 +565,10 @@ const getCsvAsMapArray = async (
     });
 };
 
+const getRunnerJarAbsolutePath = (): string => {
+    return path.resolve(RUNNER_JAR_NAME);
+}
+
 export {
     cleanUpWorkingFiles,
     getSourcesFolder,
@@ -580,6 +585,7 @@ export {
     getResultsFolder,
     getJavaExecutablePath,
     getJVMOptions,
+    getRunnerJarAbsolutePath,
     ROOT_SOURCES_FOLDER,
     TEST_RESULT_FILE,
     EXECUTABLE_FILE

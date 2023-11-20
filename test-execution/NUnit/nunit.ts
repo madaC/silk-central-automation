@@ -33,7 +33,7 @@ import {
     getSourcesFolder, getTestNames,
     replaceParametersReferences,
     replaceParamsValuesInNunitTest,
-    TEST_RESULT_FILE, ROOT_SOURCES_FOLDER
+    TEST_RESULT_FILE, ROOT_SOURCES_FOLDER, getRunnerJarAbsolutePath
 } from '../utils/files.js';
 import OctaneApplicationModule from "../model/octane/octaneApplicationModule";
 import format from "dateformat";
@@ -107,18 +107,16 @@ const createCommand = async (
 
 const getJavaCommand = (
     octaneTestName: string,
-    runnerJarPath: string,
     timestamp: string,
     isLastIteration: boolean | undefined,
     iterationIndex:number | undefined
 ) => {
     //this should always be in one line
-    return `java -cp "${runnerJarPath}" com.microfocus.adm.almoctane.migration.plugin_silk_central.nunit.NUnitCmdLineWrapper "${octaneTestName}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
+    return `java -cp "${getRunnerJarAbsolutePath()}" com.microfocus.adm.almoctane.migration.plugin_silk_central.nunit.NUnitCmdLineWrapper "${octaneTestName}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
 };
 
 const getExecutableFile = async (
     testsToRun: string,
-    runnerJarPath: string,
     nunitDirectories: NunitDirectories,
     suiteId: string,
     suiteRunId: string,
@@ -178,7 +176,6 @@ const getExecutableFile = async (
             fs.appendFileSync(EXECUTABLE_FILE, command + '\n');
             const javaCommand = getJavaCommand(
                 testName,
-                runnerJarPath,
                 timestamp,
                 isLastIteration,
                 iterationIndex
@@ -194,17 +191,12 @@ const getExecutableFile = async (
 let credentials: Credentials | undefined = undefined;
 let nunitDirectories: NunitDirectories | undefined = undefined;
 const testsToRun = process.argv[2];
-const jarPath = process.argv[3];
-const suiteId = process.argv[4];
-const suiteRunId = process.argv[5];
-const nunit2 = process.argv[6];
-const nunit3 = process.argv[7];
-const username = process.argv[8];
-const password = process.argv[9];
-
-if (!testsToRun || !jarPath) {
-    throw new Error('testsToRun and jarPath parameters are mandatory!');
-}
+const suiteId = process.argv[3];
+const suiteRunId = process.argv[4];
+const nunit2 = process.argv[5];
+const nunit3 = process.argv[6];
+const username = process.argv[7];
+const password = process.argv[8];
 
 if (username && password) {
     credentials = {
@@ -218,6 +210,6 @@ nunitDirectories = {
     nunit3: nunit3
 };
 
-getExecutableFile(testsToRun, jarPath, nunitDirectories, suiteId, suiteRunId, credentials)
+getExecutableFile(testsToRun, nunitDirectories, suiteId, suiteRunId, credentials)
     .then(() => console.log('Executable file was successfully created.'))
     .catch(err => console.error(err.message, err));

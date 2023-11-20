@@ -7,7 +7,6 @@ pipeline{
     }
     parameters {
         string(name: 'testsToRun',description: '' )
-        string(name: 'runnerJarPath', defaultValue: 'C:\\Test-Execution-silk-Central\\octane-shift-execution-wrapper-4.56-SNAPSHOT.jar', description: "")
         string(name: 'suiteId',description: '' )
         string(name: 'suiteRunId',description: '' )
     }
@@ -39,7 +38,7 @@ pipeline{
                     dir('test-execution') {
                         bat 'npm install'
                         bat 'npm run build'
-                        bat 'call npm run start-process-executor "%testsToRun%" "%runnerJarPath%" %suiteId% %suiteRunId%'
+                        bat 'call npm run start-process-executor "%testsToRun%" %suiteId% %suiteRunId%'
                         bat 'call echo "running tests..."'
                         try {
                             bat 'call command_to_execute.bat'

@@ -19,7 +19,7 @@ import {
     getEnvironmentVariables,
     getModifiedCSVBytes, getTestParameters,
     getSourcesFolder, getTestNames,
-    replaceParametersReferences, getResultsFolder, ROOT_SOURCES_FOLDER
+    replaceParametersReferences, getResultsFolder, ROOT_SOURCES_FOLDER, getRunnerJarAbsolutePath
 } from '../utils/files.js';
 import fs from 'fs';
 import path from 'node:path';
@@ -35,7 +35,6 @@ import {TestFields} from "../model/testFields.js";
 
 const getCommand = async (
     octaneTestName: string,
-    runnerJarPath: string,
     test: OctaneTest
 ): Promise<string> => {
     const keywordsJsonAttachmentContent: Buffer | undefined =
@@ -76,12 +75,11 @@ const getCommand = async (
     const dependenciesAbsolutePath = path.resolve('dependencies');
 
     //this should always be in one line
-    return `java -cp "${runnerJarPath};${dependenciesAbsolutePath}${path.sep}*" ${getJavaLibraryPath()} com.microfocus.adm.almoctane.migration.plugin_silk_central.kdt.EngineWrapper "${absoluteRootWorkingFolder}" "${octaneTestName}"`;
+    return `java -cp "${getRunnerJarAbsolutePath()};${dependenciesAbsolutePath}${path.sep}*" ${getJavaLibraryPath()} com.microfocus.adm.almoctane.migration.plugin_silk_central.kdt.EngineWrapper "${absoluteRootWorkingFolder}" "${octaneTestName}"`;
 };
 
 const generateExecutableFile = async (
     testsToRun: string,
-    runnerJarPath: string,
     suiteId: string,
     suiteRunId: string
 ): Promise<void> => {
@@ -91,7 +89,7 @@ const generateExecutableFile = async (
     const testNames: string[] = getTestNames(testsToRun);
     for (const testName of testNames) {
         const test = await getOctaneTestByName(testName, TestFields.KDT);
-        const command = await getCommand(testName, runnerJarPath, test);
+        const command = await getCommand(testName, test);
 
         const testContainerAppModule: OctaneApplicationModule =
             await getAppModuleBySourceType(test, 'test container');
@@ -139,14 +137,9 @@ const getJavaLibraryPath = (): string => {
 };
 
 const testsToRun = process.argv[2];
-const jarPath = process.argv[3];
-const suiteId = process.argv[4];
-const suiteRunId = process.argv[5];
+const suiteId = process.argv[3];
+const suiteRunId = process.argv[4];
 
-if (!testsToRun || !jarPath) {
-    throw new Error('testsToRun and jarPath parameters are mandatory!');
-}
-
-generateExecutableFile(testsToRun, jarPath, suiteId, suiteRunId)
+generateExecutableFile(testsToRun, suiteId, suiteRunId)
     .then(() => console.log('Executable file was successfully created.'))
     .catch(err => console.error(err.message, err));
