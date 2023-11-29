@@ -36,7 +36,7 @@ pipeline{
             steps {
                 convertTestsToRun format:'', framework: 'mvnSurefire'
                 script {
-                    withCredentials([usernamePassword(credentialsId: '', usernameVariable: 'dbUser', passwordVariable: 'dbPassword'),
+                    withCredentials([usernamePassword(credentialsId: 'workbenchMada', usernameVariable: 'dbUser', passwordVariable: 'dbPassword'),
                                      usernamePassword(credentialsId: '', usernameVariable: 'STWUser', passwordVariable: 'STWPassword')]) {
                         dir('test-execution') {
                             bat 'npm install'
