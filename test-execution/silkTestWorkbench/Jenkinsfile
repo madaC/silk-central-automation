@@ -36,12 +36,12 @@ pipeline{
             steps {
                 convertTestsToRun format:'', framework: 'mvnSurefire'
                 script {
-                    withCredentials(usernamePassword(credentialsId: 'workbenchMada', usernameVariable: 'dbUser', passwordVariable: 'dbPassword')) {
+                    withCredentials([usernamePassword(credentialsId: 'workbenchMada', usernameVariable: 'dbUser', passwordVariable: 'dbPassword')]) {
                         dir('test-execution') {
                             bat 'npm install'
                             bat 'npm run build'
                             bat 'call echo "generating executable file..."'
-                            bat 'call npm run start-stw "%testsToRunConverted%" %dbUser% %dbPassword% %STWUser% %STWPassword%'
+                            bat 'call npm run start-stw "%testsToRunConverted%" %dbUser% %dbPassword%'
                             try {
                                 bat 'call echo "running tests..."'
                                 bat 'call command_to_execute.bat'
