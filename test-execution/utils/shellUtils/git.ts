@@ -47,7 +47,7 @@ const gitClone = (repoUrl: string, folderToCloneInto:string, githubCredentials?:
 
     if (isHTTP && githubCredentials && !repoUrl.includes('@')) {
         const urlComponents = repoUrl.split('//');
-        repoUrl = `${urlComponents[0]}//${githubCredentials.username}:${githubCredentials.pat}@${urlComponents[1]}`;
+        repoUrl = `${urlComponents[0]}//${githubCredentials.username}:${githubCredentials.password}@${urlComponents[1]}`;
     }
 
     const result = shell.exec(`git clone ${repoUrl} ${folderToCloneInto}`);

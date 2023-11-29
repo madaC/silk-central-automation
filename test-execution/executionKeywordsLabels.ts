@@ -36,5 +36,5 @@ const getExecutionKeywords = async (
 const testSuiteId = process.argv[2];
 
 getExecutionKeywords(testSuiteId)
-    .then((kwds) => fs.appendFileSync("execution_keywords.txt", kwds))
+    .then((kwds) => fs.writeFileSync("execution_keywords.txt", kwds))
     .catch(err => console.error(err.message, err));

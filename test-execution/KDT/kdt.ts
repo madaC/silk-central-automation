@@ -19,7 +19,7 @@ import {
     getEnvironmentVariables,
     getModifiedCSVBytes, getTestParameters,
     getSourcesFolder, getTestNames,
-    replaceParametersReferences, getResultsFolder, ROOT_SOURCES_FOLDER, getRunnerJarAbsolutePath
+    replaceParametersReferences, getResultsFolder, ROOT_SOURCES_FOLDER, getRunnerJarAbsolutePath, getSilkTestHomeDir
 } from '../utils/files.js';
 import fs from 'fs';
 import path from 'node:path';
@@ -93,7 +93,7 @@ const generateExecutableFile = async (
 
         const testContainerAppModule: OctaneApplicationModule =
             await getAppModuleBySourceType(test, 'test container');
-        const timestamp: string = format(Date.now(), "yyyy-MM-dd_HH-mm-ss-ll");
+        const timestamp: string = format(Date.now(), "yyyy-mm-dd_HH-MM-ss-ll");
         const environmentParams = getEnvironmentVariables();
         let parameters: Map<string, string>[] = await getTestParameters(test, testContainerAppModule, suiteId,
             suiteRunId, timestamp, undefined);
@@ -131,7 +131,7 @@ const generateExecutableFile = async (
 
 const getJavaLibraryPath = (): string => {
     const silkTestKDTPath =
-        process.env.OPEN_AGENT_HOME + path.sep + 'KeywordDrivenTesting';
+        getSilkTestHomeDir() + path.sep + 'KeywordDrivenTesting';
 
     return `-Djava.library.path="${silkTestKDTPath}"`;
 };

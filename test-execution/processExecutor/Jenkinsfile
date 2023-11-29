@@ -6,7 +6,9 @@ pipeline{
         buildDiscarder(logRotator(numToKeepStr: '10', artifactNumToKeepStr: '10'))
     }
     parameters {
-        string(name: 'testsToRun',description: '' )
+        string(name: 'testsToRun', description: '' )
+        string(name: 'testsToRunConverted',description: '' )
+        string(name: 'runnerJarPath', defaultValue: '', description: "")
         string(name: 'suiteId',description: '' )
         string(name: 'suiteRunId',description: '' )
     }
@@ -34,11 +36,12 @@ pipeline{
                 label agentLabel
             }
             steps {
+                convertTestsToRun format:'', framework: 'mvnSurefire'
                 script {
                     dir('test-execution') {
                         bat 'npm install'
                         bat 'npm run build'
-                        bat 'call npm run start-process-executor "%testsToRun%" %suiteId% %suiteRunId%'
+                        bat 'call npm run start-process-executor "%testsToRunConverted%" %suiteId% %suiteRunId%'
                         bat 'call echo "running tests..."'
                         try {
                             bat 'call command_to_execute.bat'
@@ -47,7 +50,7 @@ pipeline{
                         }
                     }
                 }
-                archiveArtifacts artifacts: 'test-execution/java_command_to_execute.bat,test-execution/command_to_execute.bat,test-execution/testResults/**', onlyIfSuccessful: false
+                archiveArtifacts artifacts: test-execution/command_to_execute.bat,test-execution/testResults/**', onlyIfSuccessful: false
                 junit allowEmptyResults: true, testResults: 'test-execution/testResults/*/*.xml'
 
             }

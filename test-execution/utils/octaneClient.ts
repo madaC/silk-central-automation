@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 import OctaneTest from '../model/octane/octaneTest';
-import { Octane, Query } from '@microfocus/alm-octane-js-rest-sdk';
+import {Octane, Query} from '@microfocus/alm-octane-js-rest-sdk';
 import PropertiesReader from 'properties-reader';
 import SourceControlProfile from '../model/silk/sourceControlProfile';
 import GitProfile from '../model/silk/gitProfile.js';
@@ -25,6 +25,7 @@ import OctaneApplicationModule from '../model/octane/octaneApplicationModule';
 import OctaneAttachment from '../model/octane/octaneAttachment';
 import OctaneListNode from '../model/octane/octaneListNode';
 import OctaneTestSuite from '../model/octane/octaneTestSuite';
+import STWProfile from '../model/silk/STWProfile.js';
 
 const properties = PropertiesReader('./octane-details.properties');
 const octane = new Octane({
@@ -37,17 +38,27 @@ const octane = new Octane({
     password: properties.get('password')?.toString() || ''
 });
 
-
 const getOctaneTestByName = async (
     testName: string,
     testFields: string[],
     className?: string
 ): Promise<OctaneTest> => {
-    testName = testName.replace("\"","\\\"").replace("\^","\\^").replace("\'","\\q")
-        .replace("{","\\{").replace("(","\\(").replace(")","\\)").replace("[","\\[").replace("?","\\?")
+    testName = testName
+        .replace('"', '\\"')
+        .replace('^', '\\^')
+        .replace("'", '\\q')
+        .replace('{', '\\{')
+        .replace('(', '\\(')
+        .replace(')', '\\)')
+        .replace('[', '\\[')
+        .replace('?', '\\?');
     const query = Query.field('name')
         .equal(testName)
-        .and(Query.field('class_name').equal(typeof className === 'undefined'? Query.NULL: className))
+        .and(
+            Query.field('class_name').equal(
+                typeof className === 'undefined' ? Query.NULL : className
+            )
+        )
         .and(Query.field('package').equal(Query.NULL))
         .and(Query.field('component').equal(Query.NULL));
     const octaneResponse = await octane
@@ -71,12 +82,14 @@ const getOctaneTestByName = async (
     };
 };
 
-
 const getAppModuleBySourceType = async (
     test: OctaneTest,
     sourceType: string
 ): Promise<OctaneApplicationModule> => {
-    if (!Array.isArray(test.application_modules) || !test.application_modules.length) {
+    if (
+        !Array.isArray(test.application_modules) ||
+        !test.application_modules.length
+    ) {
         throw new Error(
             `Octane test with name ${test.name} does not have any application modules assigned`
         );
@@ -151,14 +164,14 @@ const getAttachmentContentByName = async (
         .query(query.build())
         .execute();
 
-    const attachment: OctaneAttachment | undefined = <OctaneAttachment>octaneResponse.data[0];
+    const attachment: OctaneAttachment | undefined = <OctaneAttachment>(
+        octaneResponse.data[0]
+    );
     if (attachment === undefined) {
         return undefined;
     }
 
-    return await getAttachmentContentById(
-        Number.parseInt(attachment!.id)
-    );
+    return await getAttachmentContentById(Number.parseInt(attachment!.id));
 };
 
 const getAttachmentContentById = async (
@@ -214,6 +227,18 @@ const deserializeSourceControlDetails = (
                 sourceControlProfile.url,
                 sourceControlProfile.WorkingFolder
             );
+        case 'STW': {
+            return new STWProfile(
+                sourceControlProfile.id,
+                sourceControlProfile.ProfileName,
+                sourceControlProfile.Type,
+                sourceControlProfile.dbType,
+                sourceControlProfile.dbServer,
+                sourceControlProfile.dbName,
+                sourceControlProfile.dbPort,
+                sourceControlProfile.dbSchema
+            );
+        }
         case 'VoidSCP':
             return undefined;
 
@@ -225,13 +250,13 @@ const deserializeSourceControlDetails = (
     }
 };
 
-
 const getTestSuiteById = async (suiteId: string): Promise<OctaneTestSuite> => {
     let query;
     query = Query.field('id').equal(suiteId);
     const octaneResponse = await octane
         .get(Octane.entityTypes.testSuites)
-        .fields('name',
+        .fields(
+            'name',
             'source_id_udf',
             'silk_release_build_udf',
             'silk_release_version_udf',
@@ -247,18 +272,30 @@ const getTestSuiteById = async (suiteId: string): Promise<OctaneTestSuite> => {
     }
     return <OctaneTestSuite>{
         ...octaneResponse.data[0],
-        silk_release_build_udf: octaneResponse.data[0].silk_release_build_udf ? await extractOctaneListNode(<OctaneListNode>(
-            octaneResponse.data[0].silk_release_build_udf
-        ), suiteId) : undefined,
-        silk_release_version_udf: octaneResponse.data[0].silk_release_version_udf ? await extractOctaneListNode(<OctaneListNode>(
-            octaneResponse.data[0].silk_release_version_udf
-        ), suiteId) : undefined,
-        sc_exec_keywords_udf: octaneResponse.data[0].sc_exec_keywords_udf.data ? await extractOctaneListNodes(<OctaneListNode[]>(
-            octaneResponse.data[0].sc_exec_keywords_udf.data
-        ), suiteId) : [],
-        attachments: <OctaneAttachment[]>(
-            octaneResponse.data[0].attachments.data
-        )
+        silk_release_build_udf: octaneResponse.data[0].silk_release_build_udf
+            ? await extractOctaneListNode(
+                  <OctaneListNode>octaneResponse.data[0].silk_release_build_udf,
+                  suiteId
+              )
+            : undefined,
+        silk_release_version_udf: octaneResponse.data[0]
+            .silk_release_version_udf
+            ? await extractOctaneListNode(
+                  <OctaneListNode>(
+                      octaneResponse.data[0].silk_release_version_udf
+                  ),
+                  suiteId
+              )
+            : undefined,
+        sc_exec_keywords_udf: octaneResponse.data[0].sc_exec_keywords_udf.data
+            ? await extractOctaneListNodes(
+                  <OctaneListNode[]>(
+                      octaneResponse.data[0].sc_exec_keywords_udf.data
+                  ),
+                  suiteId
+              )
+            : [],
+        attachments: <OctaneAttachment[]>octaneResponse.data[0].attachments.data
     };
 };
 
@@ -277,7 +314,7 @@ const getOctaneListNodesFromIds = async (
     const query = Query.field('id').inComparison(octaneListNodeIds);
     const octaneResponse = await octane
         .get(Octane.entityTypes.listNodes)
-        .fields("id", "name")
+        .fields('id', 'name')
         .query(query.build())
         .execute();
     if (octaneResponse.data === undefined) {
@@ -286,8 +323,8 @@ const getOctaneListNodesFromIds = async (
         );
     }
 
-    return <OctaneListNode[]>(octaneResponse.data);
-}
+    return <OctaneListNode[]>octaneResponse.data;
+};
 
 const validateOctaneTest = (test: OctaneTest, testName: string): void => {
     if (!test) {
@@ -311,8 +348,13 @@ const extractOctaneListNodes = async (
     octaneListNodes: OctaneListNode[],
     suiteId: string
 ): Promise<OctaneListNode[]> => {
-    return octaneListNodes.length === 0 ? [] : await getOctaneListNodesFromIds(getOctaneListNodeIds(octaneListNodes), suiteId);
-}
+    return octaneListNodes.length === 0
+        ? []
+        : await getOctaneListNodesFromIds(
+              getOctaneListNodeIds(octaneListNodes),
+              suiteId
+          );
+};
 
 const extractOctaneListNode = async (
     octaneListNode: OctaneListNode,
@@ -320,9 +362,12 @@ const extractOctaneListNode = async (
 ): Promise<OctaneListNode | undefined> => {
     let listNode: OctaneListNode[] = [];
     listNode.push(octaneListNode);
-    let extractedListNode: OctaneListNode[] = await extractOctaneListNodes(listNode, suiteId);
+    let extractedListNode: OctaneListNode[] = await extractOctaneListNodes(
+        listNode,
+        suiteId
+    );
     return extractedListNode.pop();
-}
+};
 
 export {
     validateOctaneTest,

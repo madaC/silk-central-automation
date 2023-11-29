@@ -46,7 +46,7 @@ const generateExecutableFile = async (
                 'test container'
             );
 
-        const timestamp: string = format(Date.now(), "yyyy-MM-dd_HH-mm-ss-ll");
+        const timestamp: string = format(Date.now(), "yyyy-mm-dd_HH-MM-ss-ll");
         const environmentParams = getEnvironmentVariables();
         let parameters: Map<string, string>[] = await getTestParameters(
             test,
@@ -103,10 +103,6 @@ const getCommand = async (
 const testsToRun = process.argv[2];
 const suiteId = process.argv[3];
 const suiteRunId = process.argv[4];
-
-if (!testsToRun) {
-    throw new Error('testsToRun parameter is mandatory!');
-}
 
 generateExecutableFile(testsToRun, suiteId, suiteRunId)
     .then(() => console.log('Executable file was successfully created.'))

@@ -15,5 +15,5 @@
  */
 export default interface Credentials {
     username: string;
-    pat: string;
+    password: string;
 }

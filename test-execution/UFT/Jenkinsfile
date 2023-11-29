@@ -6,11 +6,11 @@ pipeline{
         buildDiscarder(logRotator(numToKeepStr: '10', artifactNumToKeepStr: '10'))
     }
     parameters {
-        string(name: 'testsToRun',description: '' )
+        string(name: 'testsToRun', description: '' )
+        string(name: 'testsToRunConverted',description: '' )
         string(name: 'suiteId',description: '' )
         string(name: 'suiteRunId',description: '' )
-        string(name: 'testsToRunConverted',description: '' )
-    }
+       }
 
     stages {
 
@@ -38,7 +38,7 @@ pipeline{
             steps {
                 convertTestsToRun format:'', framework: 'uft'
                 script {
-                    withCredentials([usernamePassword(credentialsId: '6cfdfdfd-819b-49cb-9b55-64b7c444326b', usernameVariable: 'username', passwordVariable: 'password')]) {
+                    withCredentials([usernamePassword(credentialsId: '', usernameVariable: 'username', passwordVariable: 'password')]) {
                         dir('test-execution') {
                             bat 'npm install'
                             bat 'npm run build'

@@ -6,7 +6,8 @@ pipeline{
         buildDiscarder(logRotator(numToKeepStr: '10', artifactNumToKeepStr: '10'))
     }
     parameters {
-        string(name: 'testsToRun',description: '' )
+        string(name: 'testsToRun', description: '' )
+        string(name: 'testsToRunConverted',description: '' )
         string(name: 'suiteId',description: '' )
         string(name: 'suiteRunId',description: '' )
     }
@@ -34,11 +35,12 @@ pipeline{
                 label agentLabel
             }
             steps {
+                convertTestsToRun format:'', framework: 'mvnSurefire'
                 script {
                     dir('test-execution') {
                         bat 'npm install'
                         bat 'npm run build'
-                        bat 'call npm run start-kdt "%testsToRun%" %suiteId% %suiteRunId%'
+                        bat 'call npm run start-kdt "%testsToRunConverted%" %suiteId% %suiteRunId%'
                         try {
                             bat 'call echo "running tests..."'
                             bat 'call command_to_execute.bat'

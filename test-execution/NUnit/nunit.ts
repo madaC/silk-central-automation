@@ -140,7 +140,7 @@ const getExecutableFile = async (
             deserializeSourceControlDetails(
                 testContainerAppModule.sc_source_control_udf
             );
-        const timestamp: string = format(Date.now(), "yyyy-MM-dd_HH-mm-ss-ll");
+        const timestamp: string = format(Date.now(), "yyyy-mm-dd_HH-MM-ss-ll");
         const environmentParams = getEnvironmentVariables();
         let parameters: Map<string, string>[] = await getTestParameters(test, testContainerAppModule, suiteId,
             suiteRunId, timestamp, sourceControlProfile);
@@ -201,7 +201,7 @@ const password = process.argv[8];
 if (username && password) {
     credentials = {
         username: username,
-        pat: password
+        password: password
     };
 }
 

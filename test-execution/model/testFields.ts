@@ -21,5 +21,6 @@ export const TestFields = {
     KDT: ['name', 'external_test_id', 'attachments', 'application_modules', 'sc_enable_data_driven_udf', 'source_type_udf'],
     ProcessExecutor: ['name', 'sc_executable_name_udf', 'external_test_id', 'sc_argument_list_udf', 'sc_working_folder_udf',
         'sc_junit_result_udf', 'sc_enable_data_driven_udf', 'attachments', 'application_modules', 'source_type_udf'],
-    UFT: ['name', 'attachments', 'application_modules', 'sc_enable_data_driven_udf']
+    UFT: ['name', 'attachments', 'application_modules', 'sc_enable_data_driven_udf'],
+    STW: ['name', 'sc_script_name_udf','attachments', 'application_modules', 'sc_enable_data_driven_udf']
 }

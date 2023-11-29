@@ -26,6 +26,7 @@ import csv from 'csvtojson';
 import OctaneApplicationModule from '../model/octane/octaneApplicationModule';
 import SourceControlProfile from '../model/silk/sourceControlProfile';
 import path from 'path';
+import {BinaryLike, createCipheriv, createDecipheriv} from "crypto";
 
 const ROOT_SOURCES_FOLDER = 'test_sources';
 const TEST_RESULT_FILE = 'testResults';
@@ -33,6 +34,10 @@ const EXECUTABLE_FILE = 'command_to_execute.bat';
 const RUNNER_JAR_NAME = 'octane-shift-execution-wrapper.jar';
 const DEFAULT_VM_ARGS = '-Xmx128m';
 const paramRegex = /\${([\S]+?)}/;
+const ENCRYPTION_KEY = [
+    5, -21, 3, 5, -43, 9, 6, 127, 12, 64, 91, -31, -12, 77, 32, 17
+];
+const iv = new Uint8Array(8);
 
 const cleanUpWorkingFiles = (): void => {
     if (fs.existsSync(EXECUTABLE_FILE)) {
@@ -520,16 +525,14 @@ const getTestParameters = async (
 };
 
 const getTestNames = (testsToRun: string): string[] => {
-    const tests: string[] = testsToRun.split('||');
+    const tests: string[] = testsToRun.substring(testsToRun.indexOf("#") + 1).split('+');
     const testNames: string[] = [];
     tests.forEach(test => {
-        const testProperties: string[] = test.split('|');
-        if (testProperties.length > 1) {
-            testNames.push(testProperties[0]);
-        }
+        testNames.push(test);
     });
     return testNames;
 };
+
 
 const getJavaExecutablePath = (test: OctaneTest): string => {
     if (test.sc_java_home_udf) {
@@ -569,6 +572,31 @@ const getRunnerJarAbsolutePath = (): string => {
     return path.resolve(RUNNER_JAR_NAME);
 }
 
+const encrypt = (valueToEncrypt: BinaryLike): string => {
+    let cipher = createCipheriv('des-ede-cbc', Buffer.from(ENCRYPTION_KEY), iv);
+    let encrypted = cipher.update(valueToEncrypt);
+    encrypted = Buffer.concat([encrypted, cipher.final()]);
+    return encrypted.toString('base64');
+};
+
+const decrypt = (encryptdata: string): string => {
+    let decipher = createDecipheriv(
+        'des-ede-cbc',
+        Buffer.from(ENCRYPTION_KEY),
+        iv
+    );
+    let decrypted = decipher.update(encryptdata, 'base64', 'utf-8');
+    decrypted += decipher.final('utf-8');
+    return decrypted.toString();
+};
+
+const getSilkTestHomeDir = (): string => {
+    if (process.env.OPEN_AGENT_HOME === undefined) {
+        throw new Error('Silk Test not installed!');
+    }
+    return process.env.OPEN_AGENT_HOME;
+};
+
 export {
     cleanUpWorkingFiles,
     getSourcesFolder,
@@ -586,6 +614,9 @@ export {
     getJavaExecutablePath,
     getJVMOptions,
     getRunnerJarAbsolutePath,
+    encrypt,
+    decrypt,
+    getSilkTestHomeDir,
     ROOT_SOURCES_FOLDER,
     TEST_RESULT_FILE,
     EXECUTABLE_FILE

@@ -22,10 +22,10 @@ const svnCheckout = (repoUrl: string, folderToCheckoutInto:string, svnCredential
     let command;
 
     if (isHTTP && svnCredentials) {
-        command = `svn co --non-interactive --no-auth-cache --username "${svnCredentials.username}" --password "${svnCredentials.pat}" ${repoUrl} ${folderToCheckoutInto}`;
+        command = `svn co --non-interactive --no-auth-cache --username "${svnCredentials.username}" --password "${svnCredentials.password}" ${repoUrl} ${folderToCheckoutInto}`;
     } else if (isSSH && svnCredentials) {
         command = `svn co svn+ssh://${svnCredentials.username}:${
-            svnCredentials.pat
+            svnCredentials.password
         }@${repoUrl.split('svn+ssh://')[1]} ${folderToCheckoutInto}`;
     } else {
         command = `svn co ${repoUrl} ${folderToCheckoutInto}`;

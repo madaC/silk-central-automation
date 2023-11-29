@@ -78,7 +78,7 @@ let credentials: Credentials | undefined = undefined;
 if (username && password) {
     credentials = {
         username: username,
-        pat: password
+        password: password
     };
 }
 
