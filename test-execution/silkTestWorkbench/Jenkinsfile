@@ -42,7 +42,7 @@ pipeline{
                             bat 'npm install'
                             bat 'npm run build'
                             bat 'call echo "generating executable file..."'
-                            bat 'call npm run start-stw "%testsToRunConverted%" %dbUser% %dbPassword%'
+                            bat 'call npm run start-stw "%testsToRunConverted%" %dbUser% %dbPassword% %STWUser% %STWPassword%'
                             try {
                                 bat 'call echo "running tests..."'
                                 bat 'call command_to_execute.bat'
