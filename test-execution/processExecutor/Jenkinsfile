@@ -49,7 +49,7 @@ pipeline{
                         }
                     }
                 }
-                archiveArtifacts artifacts: test-execution/command_to_execute.bat,test-execution/testResults/**', onlyIfSuccessful: false
+                archiveArtifacts artifacts: 'test-execution/command_to_execute.bat,test-execution/testResults/**', onlyIfSuccessful: false
                 junit allowEmptyResults: true, testResults: 'test-execution/testResults/*/*.xml'
 
             }
