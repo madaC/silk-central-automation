@@ -45,13 +45,13 @@ pipeline{
                             bat 'echo "fetching tests resources..."'
                             bat """npm run start-uft "${testsToRunConverted.replaceAll('\\R\\n','').replaceAll('\"','\'').replaceAll('FTToolsLauncher\\\\','')}" %suiteId% %suiteRunId% %username% %password%"""
                             bat 'echo "running tests..."'
-                            bat 'powershell ./UFTExecutor.ps1'
+                            bat 'powershell ./UFTExecutorJenkins.ps1'
                         }
 
                     }
                 }
                 archiveArtifacts artifacts: 'test-execution/build/**', onlyIfSuccessful: false
-                junit allowEmptyResults: true, testResults: 'test-execution/build/Results.xml'
+                junit allowEmptyResults: true, testResults: '**/Results.xml'
 
             }
 

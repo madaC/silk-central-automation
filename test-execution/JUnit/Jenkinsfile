@@ -37,7 +37,7 @@ pipeline{
             steps {
                 convertTestsToRun format:'', framework: 'mvnSurefire'
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'jenkins_execution', usernameVariable: 'username', passwordVariable: 'password')]) {
+                    withCredentials([usernamePassword(credentialsId: '', usernameVariable: 'username', passwordVariable: 'password')]) {
                         dir('test-execution') {
                             bat 'npm install'
                             bat 'npm run build'
@@ -53,7 +53,7 @@ pipeline{
                     }
                 }
                 archiveArtifacts artifacts: 'test-execution/command_to_execute.bat,test-execution/testResults/**', onlyIfSuccessful: false
-                junit allowEmptyResults: true, testResults: 'test-execution/testResults/*/*.xml'
+                junit allowEmptyResults: true, testResults: '**/Results.xml'
 
             }
 

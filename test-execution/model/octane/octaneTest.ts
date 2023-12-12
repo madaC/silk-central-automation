@@ -37,5 +37,6 @@ export default interface OctaneTest {
     source_type_udf: string,
     sc_java_home_udf: string,
     sc_jvm_options_udf: string,
-    sc_script_name_udf: string
+    sc_script_name_udf: string,
+    sc_playback_opt_udf: string | undefined
 }

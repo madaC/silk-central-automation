@@ -26,9 +26,14 @@ import {
     EXECUTABLE_FILE,
     getEnvironmentVariables,
     getTestParameters,
-    getSourcesFolder, getTestNames,
+    getSourcesFolder,
+    getTestNames,
     replaceParametersReferences,
-    replaceParamsValuesInJunitTest, ROOT_SOURCES_FOLDER, getJavaExecutablePath, getJVMOptions, getRunnerJarAbsolutePath
+    replaceParamsValuesInJunitTest,
+    ROOT_SOURCES_FOLDER,
+    getJavaExecutablePath,
+    getJVMOptions,
+    getRunnerJarAbsolutePath
 } from '../utils/files.js';
 import { getAbsoluteClasspath } from '../utils/classpath.js';
 import OctaneApplicationModule from '../model/octane/octaneApplicationModule';
@@ -136,14 +141,20 @@ const generateExecutableFile = async (
             );
         const timestamp: string = format(Date.now(), "yyyy-mm-dd_HH-MM-ss-ll");
         const environmentParams = getEnvironmentVariables();
-        let parameters: Map<string, string>[] = await getTestParameters(test, testContainerAppModule, suiteId,
-            suiteRunId, timestamp, sourceControlProfile);
+        let parameters: Map<string, string>[] = await getTestParameters(
+            test,
+            testContainerAppModule,
+            suiteId,
+            suiteRunId,
+            timestamp,
+            sourceControlProfile
+        );
 
         for (const parameterRow of parameters) {
             let parametersForCommand = '';
-            for (let param in parameterRow) {
-                parametersForCommand = `${parametersForCommand} "-D${param}=${parameterRow.get(param)}"`;
-            }
+            parameterRow.forEach((value, key) => {
+                parametersForCommand = `${parametersForCommand} "-D${key}=${value}"`;
+            });
             parameterRow.set('parametersForJavaCommand', parametersForCommand);
         }
 

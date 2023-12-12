@@ -18,6 +18,7 @@ import Credentials from '../credentials.js';
 import xml2js from 'xml2js';
 import fs from 'fs';
 import {encrypt} from '../../utils/files.js';
+import path from "path";
 
 export default class STWProfile extends SourceControlProfile {
     private _dbType: string;
@@ -145,6 +146,6 @@ export default class STWProfile extends SourceControlProfile {
     }
 
     getAbsoluteWorkingFolderPath(rootWorkingFolder: string): string {
-        return '';
+       return path.resolve(rootWorkingFolder);
     }
 }

@@ -56,7 +56,7 @@ pipeline{
                     }
                 }
                 archiveArtifacts artifacts: 'test-execution/java_command_to_execute.bat,test-execution/command_to_execute.bat,test-execution/testResults/**', onlyIfSuccessful: false
-                junit allowEmptyResults: true, testResults: 'test-execution/testResults/*/*.xml'
+                junit allowEmptyResults: true, testResults: '**/Results.xml '
 
             }
 

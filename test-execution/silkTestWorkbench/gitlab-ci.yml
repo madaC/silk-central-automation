@@ -23,7 +23,7 @@ run-tests:
     - npm run build
     - echo $testsToRun
     - echo "generating executable file..."
-    - npm run start-stw "%testsToRun%" %dbUser% %dbPassword% %STWUser% %STWPassword%
+    - npm run start-stw "%testsToRun%" %suiteId% %suiteRunId% %dbUser% %dbPassword% %STWUser% %STWPassword%
     - echo "running tests... "
     - Get-Content -Path .\command_to_execute.bat
     - Start-Process -Wait -FilePath .\command_to_execute.bat

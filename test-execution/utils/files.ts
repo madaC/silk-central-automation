@@ -18,10 +18,7 @@ import OctaneTest from '../model/octane/octaneTest';
 import OctaneListNode from '../model/octane/octaneListNode';
 
 import OctaneTestSuite from '../model/octane/octaneTestSuite';
-import {
-    getAttachmentContentByName,
-    getTestSuiteById
-} from './octaneClient.js';
+import {getAttachmentContentByName, getTestSuiteById} from './octaneClient.js';
 import csv from 'csvtojson';
 import OctaneApplicationModule from '../model/octane/octaneApplicationModule';
 import SourceControlProfile from '../model/silk/sourceControlProfile';
@@ -211,6 +208,21 @@ const replaceParamsValuesInJunitTest = (
         );
     }
     return result;
+};
+
+const replaceParamsValuesInSTWTest = (
+    iteration: Map<string, string>,
+    envParams: Map<string, string>,
+    test: OctaneTest
+): void => {
+    if (test.sc_playback_opt_udf) {
+        test.sc_playback_opt_udf = replaceParamValue(
+            test.sc_playback_opt_udf,
+            iteration,
+            envParams,
+            []
+        );
+    }
 };
 
 const replaceParamsValuesInProcessExecutorTest = (
@@ -617,6 +629,7 @@ export {
     encrypt,
     decrypt,
     getSilkTestHomeDir,
+    replaceParamsValuesInSTWTest,
     ROOT_SOURCES_FOLDER,
     TEST_RESULT_FILE,
     EXECUTABLE_FILE

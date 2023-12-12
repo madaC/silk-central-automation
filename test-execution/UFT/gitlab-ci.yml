@@ -25,7 +25,7 @@ run-tests:
     - $testsToRunModified = '"' + $testsToRun.Replace("`n","").Replace('"',"'") + '"'
     - echo "$testsToRunModified"
     - npm run start-uft "$testsToRunModified" $suiteId $suiteRunId $username $password
-    - powershell ./UFTExecutor.ps1
+    - powershell ./UFTExecutorGitlab.ps1
   artifacts:
     paths:
       - .\test-execution\build\*

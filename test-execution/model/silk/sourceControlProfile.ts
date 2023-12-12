@@ -18,7 +18,7 @@ import Credentials from '../credentials';
 export default abstract class SourceControlProfile {
     public id: string;
     public name: string;
-    public Type: string;
+    private _Type: string;
     public _rootNode?: string;
     public WorkingFolder: string;
 
@@ -32,9 +32,16 @@ export default abstract class SourceControlProfile {
     protected constructor(id: string, name: string, type: string, rootNode: string, workingFolder: string) {
         this.id = id;
         this.name = name;
-        this.Type = type;
+        this._Type = type;
         this._rootNode = rootNode;
         this.WorkingFolder = workingFolder
     }
 
+    get Type(): string {
+        return this._Type;
+    }
+
+    set Type(value: string) {
+        this._Type = value;
+    }
 }

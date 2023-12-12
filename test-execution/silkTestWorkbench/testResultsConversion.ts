@@ -25,21 +25,17 @@ const convertTestResultsToOctaneFormat = async (): Promise<void> => {
     const testSuite: {testsuite: TestCase[]} = {
         testsuite: []
     };
-    const xmlInfoFiles = getAllFilesFromDir(TEST_RESULT_FILE).filter(file =>
-        file.endsWith('.Info.xml')
-    );
-    for (const file of xmlInfoFiles) {
-        const xmlContent: string = fs.readFileSync(file, 'utf-8');
-        const result = await parseXmlStringToObject(xmlContent);
+    const files = fs.readdirSync(TEST_RESULT_FILE);
+    for (const file of files) {
         const octaneTestName: string = file
             .toString()
             .substring(
                 file.toString().indexOf('/') + 1,
-                file
-                    .toString()
-                    .indexOf(format(Date.now(), 'yyyy-mm-dd').toString()) - 1
+                file.toString().indexOf(format(Date.now(), 'yyyy-mm-dd').toString()) - 1
             );
-        const testCase = getTestCase(result, octaneTestName);
+        const name: string = TEST_RESULT_FILE + '/' + file;
+        const xmlInfoFiles = getAllFilesFromDir(name).filter(file => file.endsWith('.Info.xml'));
+        const testCase = await getTestCase(xmlInfoFiles, octaneTestName);
         testSuite.testsuite.push(testCase);
     }
     const resultsXml: string = xmlBuilder.buildObject(testSuite);
@@ -79,7 +75,10 @@ const parseXmlStringToObject = (xmlString: string): Promise<Object> => {
     });
 };
 
-const getTestCase = (xmlObject: any, octaneTestName: string): TestCase => {
+const getTestCase = async (
+    files: string[],
+    octaneTestName: string
+): Promise<TestCase> => {
     const testResult: TestCase = {
         testcase: {
             $: {
@@ -89,9 +88,18 @@ const getTestCase = (xmlObject: any, octaneTestName: string): TestCase => {
         }
     };
 
-    if (xmlObject.playbackErrorString) {
+    let errorMessage: string = '';
+    for (const file of files) {
+        const xmlContent: string = fs.readFileSync(file, 'utf-8');
+        const result: any = await parseXmlStringToObject(xmlContent);
+        if (result.playbackErrorString) {
+            errorMessage = errorMessage + result.playbackErrorString;
+        }
+    }
+
+    if (errorMessage != '') {
         testResult.testcase.error = {
-            $: { message: xmlObject.playbackErrorString }
+            $: { message: errorMessage }
         };
     }
 

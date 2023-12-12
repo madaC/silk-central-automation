@@ -16,9 +16,13 @@
 import {
     cleanUpWorkingFiles,
     EXECUTABLE_FILE,
+    getEnvironmentVariables,
     getResultsFolder,
     getSilkTestHomeDir,
     getTestNames,
+    getTestParameters,
+    replaceParametersReferences,
+    replaceParamsValuesInSTWTest,
     ROOT_SOURCES_FOLDER
 } from '../utils/files.js';
 import OctaneTest from '../model/octane/octaneTest.js';
@@ -35,8 +39,11 @@ import STWProfile from '../model/silk/STWProfile.js';
 import fs from 'fs';
 import format from 'dateformat';
 
+const SPECIFIC_DSN_PARAMETER = 'SCTM_STWB_DSN';
 const generateExecutableFile = async (
     testsToRun: string,
+    suiteId: string,
+    suiteRunId: string,
     dbCredentials: Credentials,
     STWCredentials?: Credentials
 ): Promise<void> => {
@@ -50,7 +57,7 @@ const generateExecutableFile = async (
         );
         const testContainerAppModule: OctaneApplicationModule =
             await getAppModuleBySourceType(test, 'test container');
-        const stwProfile = <STWProfile> deserializeSourceControlDetails(testContainerAppModule.sc_source_control_udf)!;
+        const stwProfile = <STWProfile>deserializeSourceControlDetails(testContainerAppModule.sc_source_control_udf)!;
 
         stwProfile.dbUser = dbCredentials.username;
         stwProfile.dbPassword = dbCredentials.password;
@@ -59,26 +66,60 @@ const generateExecutableFile = async (
         stwProfile.STWPassword = STWCredentials?.password;
 
         const rootWorkingFolder = `${ROOT_SOURCES_FOLDER}/source_control_${stwProfile.id}`;
+        const timestamp: string = format(Date.now(), 'yyyy-mm-dd_HH-MM-ss-ll');
+        const environmentParams = getEnvironmentVariables();
         fs.mkdirSync(rootWorkingFolder, {recursive: true});
 
         await stwProfile.fetchResources(rootWorkingFolder);
 
-        const command = await getCommand(stwProfile, test);
-        fs.appendFileSync(EXECUTABLE_FILE, command + '\n');
+        let parameters: Map<string, string>[] = await getTestParameters(test, testContainerAppModule, suiteId,
+            suiteRunId, timestamp, stwProfile);
+
+        const iterationsWithReplacedParams = await replaceParametersReferences(
+            parameters,
+            environmentParams
+        );
+
+        let iterationIndex: number | undefined;
+        for (let i = 0; i < iterationsWithReplacedParams.length; i++) {
+            const iteration = iterationsWithReplacedParams[i];
+            replaceParamsValuesInSTWTest(iteration, environmentParams, test);
+
+            if (iterationsWithReplacedParams.length > 1) {
+                iterationIndex = i;
+            }
+            const command = await getCommand(
+                stwProfile,
+                test,
+                iteration,
+                timestamp,
+                iterationIndex
+            );
+            fs.appendFileSync(EXECUTABLE_FILE, command + '\n');
+        }
     }
 };
 
 const getCommand = async (
     STWProfile: STWProfile,
-    octaneTest: OctaneTest
+    octaneTest: OctaneTest,
+    parameters: Map<string, string>,
+    timestamp: string,
+    iterationIndex: number | undefined
 ): Promise<string> => {
     let commandArray: string[] = [];
     commandArray.push(`"${getSilkTestHomeDir()}/gui/STW.exe"`);
-    commandArray.push('-createdsn'); // add check for SCTM_STWB_DSN parameter or environment variable
-    const STWDatabaseEncryptedXmlAbsolutePath = path.resolve(
-        `${ROOT_SOURCES_FOLDER}/source_control_${STWProfile.id}/TP.xml`
-    );
-    commandArray.push(`"${STWDatabaseEncryptedXmlAbsolutePath}"`);
+
+    const specificDSN = parameters.get(SPECIFIC_DSN_PARAMETER);
+    if (specificDSN) {
+        commandArray.push('-dsn')
+        commandArray.push()
+    } else {
+        commandArray.push('-createdsn');
+        const STWDatabaseEncryptedXmlAbsolutePath = path.resolve(`${ROOT_SOURCES_FOLDER}/source_control_${STWProfile.id}/TP.xml`);
+        commandArray.push(`"${STWDatabaseEncryptedXmlAbsolutePath}"`)
+    }
+
     if (STWProfile.STWUser) {
         commandArray.push('-username');
         commandArray.push(STWProfile.STWUser);
@@ -86,10 +127,7 @@ const getCommand = async (
         commandArray.push(STWProfile.STWPassword!);
     }
     commandArray.push('-resultdir');
-    const timestamp: string = format(Date.now(), 'yyyy-mm-dd_HH-MM-ss-ll');
-    commandArray.push(
-        `"${path.resolve(getResultsFolder(octaneTest, timestamp, undefined))}"`
-    );
+    commandArray.push(`"${path.resolve(getResultsFolder(octaneTest, timestamp, iterationIndex))}"`);
 
     const scriptInfo: string[] = octaneTest.sc_script_name_udf.split('/');
     const projectName = scriptInfo[1];
@@ -101,7 +139,11 @@ const getCommand = async (
     commandArray.push('-script');
     commandArray.push(script);
 
-    commandArray.push('-novariablevalidation'); //check for parameters
+    commandArray.push('-novariablevalidation');
+    parameters.forEach((value, key) => {
+        commandArray.push("-variable")
+        commandArray.push(`"${key}=${value}"`)
+    });
 
     return commandArray.join(' ');
 };
@@ -109,10 +151,12 @@ const getCommand = async (
 let dbCredentials: Credentials | undefined = undefined;
 let STWCredentials: Credentials | undefined = undefined;
 const testsToRun = process.argv[2];
-const dbUser = process.argv[3];
-const dbPassword = process.argv[4];
-const STWUser = process.argv[5];
-const STWPassword = process.argv[6];
+const suiteId = process.argv[3];
+const suiteRunId = process.argv[4];
+const dbUser = process.argv[5];
+const dbPassword = process.argv[6];
+const STWUser = process.argv[7];
+const STWPassword = process.argv[8];
 
 if (dbUser && dbPassword) {
     dbCredentials = {
@@ -130,8 +174,13 @@ if (STWUser && STWPassword) {
         username: STWUser,
         password: STWPassword
     };
+} else {
+    STWCredentials = {
+        username: 'Admin',
+        password: 'admin'
+    }
 }
 
-generateExecutableFile(testsToRun, dbCredentials, STWCredentials)
+generateExecutableFile(testsToRun, suiteId, suiteRunId, dbCredentials, STWCredentials)
     .then(() => console.log('Executable file was successfully created.'))
     .catch(err => console.error(err.message, err));

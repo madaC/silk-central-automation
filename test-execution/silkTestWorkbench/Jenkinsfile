@@ -9,6 +9,7 @@ pipeline{
         string(name: 'testsToRun', description: '' )
         string(name: 'testsToRunConverted', description: '' )
         string(name: 'suiteId',description: '' )
+        string(name: 'suiteRunId',description: '' )
     }
 
     stages {
@@ -36,13 +37,13 @@ pipeline{
             steps {
                 convertTestsToRun format:'', framework: 'mvnSurefire'
                 script {
-                    withCredentials([usernamePassword(credentialsId: 'workbenchMada', usernameVariable: 'dbUser', passwordVariable: 'dbPassword'),
-                                     usernamePassword(credentialsId: 'DB-Workbench', usernameVariable: 'STWUser', passwordVariable: 'STWPassword')]) {
+                    withCredentials([usernamePassword(credentialsId: '', usernameVariable: 'dbUser', passwordVariable: 'dbPassword'),
+                                     usernamePassword(credentialsId: '', usernameVariable: 'STWUser', passwordVariable: 'STWPassword')]) {
                         dir('test-execution') {
                             bat 'npm install'
                             bat 'npm run build'
                             bat 'call echo "generating executable file..."'
-                            bat 'call npm run start-stw "%testsToRunConverted%" %dbUser% %dbPassword% %STWUser% %STWPassword%'
+                            bat 'call npm run start-stw "%testsToRunConverted%" %suiteId% %suiteRunId% %dbUser% %dbPassword% %STWUser% %STWPassword%'
                             try {
                                 bat 'call echo "running tests..."'
                                 bat 'call command_to_execute.bat'
@@ -56,7 +57,7 @@ pipeline{
                     }
                 }
                 archiveArtifacts artifacts: 'test-execution/command_to_execute.bat,test-execution/testResults/**', onlyIfSuccessful: false
-                junit allowEmptyResults: true, testResults: 'test-execution/testResults/Results.xml'
+                junit allowEmptyResults: true, testResults: '**/Results.xml'
 
             }
 
