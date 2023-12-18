@@ -50,7 +50,7 @@ pipeline{
 
                     }
                 }
-                archiveArtifacts artifacts: 'test-execution/build/**', onlyIfSuccessful: false
+                archiveArtifacts artifacts: 'test-execution/build/**,test-execution/testResults/**', onlyIfSuccessful: false
                 junit allowEmptyResults: true, testResults: '**/Results.xml'
 
             }
