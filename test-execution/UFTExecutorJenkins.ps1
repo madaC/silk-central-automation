@@ -1,4 +1,5 @@
 mkdir build
+mkdir testResults
 $TESTS_TO_RUN_XML = $env:testsToRunConverted -replace ('\${workspace}', -join($env:WORKSPACE, "\test-execution"))
 $WORKSPACE_ESCAPED = $env:WORKSPACE -replace ('\\', '\\') -replace ('[ ]', '%20')
 $WORKSPACE_ESCAPED2 = $env:WORKSPACE -replace ('\\', '\\')
