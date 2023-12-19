@@ -29,3 +29,4 @@ run-tests:
   artifacts:
     paths:
       - .\test-execution\build\*
+      - .\test-execution\testResults\*

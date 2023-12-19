@@ -1,4 +1,5 @@
 mkdir build
+mkdir testResults
 $TESTS_TO_RUN_XML = $env:testsToRun -replace ('path="',-join("path=`"", -join($env:CI_PROJECT_DIR, "\test-execution")))
 $WORKSPACE_ESCAPED = $env:CI_PROJECT_DIR -replace ('\\', '\\') -replace ('[ ]', '%20')
 $WORKSPACE_ESCAPED2 = $env:CI_PROJECT_DIR -replace ('\\', '\\')
