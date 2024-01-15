@@ -30,7 +30,7 @@ import {
     EXECUTABLE_FILE,
     getEnvironmentVariables,
     getTestParameters,
-    getSourcesFolder, getTestNames,
+    getTestNames,
     replaceParametersReferences,
     replaceParamsValuesInNunitTest,
     TEST_RESULT_FILE, ROOT_SOURCES_FOLDER, getRunnerJarAbsolutePath
@@ -53,14 +53,10 @@ const createCommand = async (
 ) => {
     let dllPath;
     if (sourceControlProfile) {
-        const rootWorkingFolder = getSourcesFolder(test);
-        sourceControlProfile!.fetchResources(
-            rootWorkingFolder,
-            credentials
-        );
+        sourceControlProfile!.fetchResources(credentials);
 
         dllPath = getAbsoluteClasspath(
-            sourceControlProfile!.getAbsoluteWorkingFolderPath(rootWorkingFolder),
+            sourceControlProfile!.getAbsoluteWorkingFolderPath(),
             test.sc_nunit_assembly_udf!,
             sourceControlProfile.WorkingFolder
         );
@@ -98,11 +94,14 @@ const createCommand = async (
     } else {
         outputFilePath = `${TEST_RESULT_FILE}/${test.name}_${timestamp}/output_nunit.xml`;
     }
-    let command;
-    //this should always be in one line
-    command = `"${nunitDirectory}" ${nunitOptions} --result="${outputFilePath}";transform="./nunit3-junit.xslt" "${dllPath}"`;
+    const commandArray: string[] = [];
+    commandArray.push(`"${nunitDirectory}"`)
+    commandArray.push(nunitOptions)
+    commandArray.push(`--result="${outputFilePath}";`)
+    commandArray.push(`transform="./nunit3-junit.xslt"`)
+    commandArray.push(`"${dllPath}"`)
 
-    return command;
+    return commandArray.join(' ');
 };
 
 const getJavaCommand = (
@@ -111,8 +110,21 @@ const getJavaCommand = (
     isLastIteration: boolean | undefined,
     iterationIndex:number | undefined
 ) => {
-    //this should always be in one line
-    return `java -cp "${getRunnerJarAbsolutePath()}" com.microfocus.adm.almoctane.migration.plugin_silk_central.nunit.NUnitCmdLineWrapper "${octaneTestName}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
+    const commandArray: string[] = [];
+
+    commandArray.push("java");
+    commandArray.push("-cp");
+    commandArray.push(`"${getRunnerJarAbsolutePath()}"`);
+    commandArray.push("com.microfocus.adm.almoctane.migration.plugin_silk_central.nunit.NUnitCmdLineWrapper");
+    commandArray.push(`"${octaneTestName}"`);
+    commandArray.push(timestamp);
+
+    if (isLastIteration !== undefined && iterationIndex !== undefined) {
+        commandArray.push(String(isLastIteration));
+        commandArray.push(iterationIndex.toString());
+    }
+
+    return commandArray.join(' ');
 };
 
 const getExecutableFile = async (
@@ -189,7 +201,7 @@ const getExecutableFile = async (
 };
 
 let credentials: Credentials | undefined = undefined;
-let nunitDirectories: NunitDirectories | undefined = undefined;
+let nunitDirectories: NunitDirectories | undefined;
 const testsToRun = process.argv[2];
 const suiteId = process.argv[3];
 const suiteRunId = process.argv[4];

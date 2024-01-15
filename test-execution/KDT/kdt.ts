@@ -17,9 +17,15 @@ import {
     cleanUpWorkingFiles,
     EXECUTABLE_FILE,
     getEnvironmentVariables,
-    getModifiedCSVBytes, getTestParameters,
-    getSourcesFolder, getTestNames,
-    replaceParametersReferences, getResultsFolder, ROOT_SOURCES_FOLDER, getRunnerJarAbsolutePath, getSilkTestHomeDir
+    getModifiedCSVBytes,
+    getTestParameters,
+    getTestNames,
+    replaceParametersReferences,
+    getResultsFolder,
+    ROOT_SOURCES_FOLDER,
+    getRunnerJarAbsolutePath,
+    getSilkTestHomeDir,
+    getSourcesFolder
 } from '../utils/files.js';
 import fs from 'fs';
 import path from 'node:path';
@@ -74,8 +80,16 @@ const getCommand = async (
     );
     const dependenciesAbsolutePath = path.resolve('dependencies');
 
-    //this should always be in one line
-    return `java -cp "${getRunnerJarAbsolutePath()};${dependenciesAbsolutePath}${path.sep}*" ${getJavaLibraryPath()} com.microfocus.adm.almoctane.migration.plugin_silk_central.kdt.EngineWrapper "${absoluteRootWorkingFolder}" "${octaneTestName}"`;
+    const commandArray: string[] = [];
+    commandArray.push("java");
+    commandArray.push("-cp");
+    commandArray.push(`"${getRunnerJarAbsolutePath()};${dependenciesAbsolutePath}${path.sep}*"`);
+    commandArray.push(getJavaLibraryPath());
+    commandArray.push("com.microfocus.adm.almoctane.migration.plugin_silk_central.kdt.EngineWrapper")
+    commandArray.push(`"${absoluteRootWorkingFolder}"`)
+    commandArray.push(`"${octaneTestName}"`)
+
+    return commandArray.join(' ');
 };
 
 const generateExecutableFile = async (

@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 import Credentials from '../credentials';
+import {ROOT_SOURCES_FOLDER} from "../../utils/files.js";
 
 export default abstract class SourceControlProfile {
     public id: string;
@@ -22,19 +23,22 @@ export default abstract class SourceControlProfile {
     public _rootNode?: string;
     public WorkingFolder: string;
 
-    abstract fetchResources(
-        rootWorkingFolder: string,
-        credentials?: Credentials
-    ): void;
+    abstract fetchResources(credentials?: Credentials): void;
 
-    abstract getAbsoluteWorkingFolderPath(rootWorkingFolder: string): string;
+    abstract getAbsoluteWorkingFolderPath(): string;
 
-    protected constructor(id: string, name: string, type: string, rootNode: string, workingFolder: string) {
+    protected constructor(
+        id: string,
+        name: string,
+        type: string,
+        rootNode: string,
+        workingFolder: string
+    ) {
         this.id = id;
         this.name = name;
         this._Type = type;
         this._rootNode = rootNode;
-        this.WorkingFolder = workingFolder
+        this.WorkingFolder = workingFolder;
     }
 
     get Type(): string {
@@ -44,4 +48,8 @@ export default abstract class SourceControlProfile {
     set Type(value: string) {
         this._Type = value;
     }
+
+    getRootWorkingFolder = (): string => {
+        return `${ROOT_SOURCES_FOLDER}/SourceControlProfile_${this.id}`;
+    };
 }

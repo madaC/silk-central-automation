@@ -30,7 +30,7 @@ export default interface OctaneTest {
     sc_enable_data_driven_udf?: boolean;
     application_modules?: OctaneApplicationModule[];
     attachments?: OctaneAttachment[];
-    sc_executable_name_udf?: string,
+    sc_executable_name_udf: string,
     sc_argument_list_udf?: string,
     sc_working_folder_udf?: string,
     sc_junit_result_udf?: string,

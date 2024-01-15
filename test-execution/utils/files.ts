@@ -303,10 +303,17 @@ const getPredefinedParameters = async (
             path.resolve(getResultsFolder(test, timestamp, undefined))
         );
     } else {
-        predefinedParameters.set(
-            '#sctm_exec_sourcesfolder',
-            path.resolve(getSourcesFolder(test))
-        );
+        if (sourceControlProfile) {
+            predefinedParameters.set(
+                '#sctm_exec_sourcesfolder',
+                path.resolve(sourceControlProfile.getRootWorkingFolder())
+            );
+        } else {
+            predefinedParameters.set(
+                '#sctm_exec_sourcesfolder',
+                path.resolve(getSourcesFolder(test))
+            );
+        }
     }
     if (testContainerAppModule.sc_product_name_udf) {
         predefinedParameters.set(
@@ -317,9 +324,7 @@ const getPredefinedParameters = async (
     if (sourceControlProfile) {
         predefinedParameters.set(
             '#sctm_source_root_dir',
-            sourceControlProfile.getAbsoluteWorkingFolderPath(
-                getSourcesFolder(test)
-            )
+            sourceControlProfile.getAbsoluteWorkingFolderPath()
         );
     }
     let testRelatedParameters: Map<string, string> =

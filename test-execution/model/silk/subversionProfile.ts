@@ -40,16 +40,13 @@ export default class SubversionProfile extends SourceControlProfile {
         return this._url.replace(/\\/g, '/');
     }
 
-    fetchResources(
-        rootWorkingFolder: string,
-        credentials: Credentials
-    ): void {
-        svnCheckout(this._url, rootWorkingFolder, credentials);
+    fetchResources(credentials: Credentials): void {
+        svnCheckout(this._url, this.getRootWorkingFolder(), credentials);
     }
 
-    getAbsoluteWorkingFolderPath(rootWorkingFolder: string): string {
+    getAbsoluteWorkingFolderPath(): string {
         return path.resolve(
-            `${rootWorkingFolder}/${this._projectPath}/${this._rootNode}`
+            `${this.getRootWorkingFolder()}/${this._projectPath}/${this._rootNode}`
         );
     }
 }

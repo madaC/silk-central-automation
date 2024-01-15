@@ -22,15 +22,10 @@ import {
     getTestNames,
     getTestParameters,
     replaceParametersReferences,
-    replaceParamsValuesInSTWTest,
-    ROOT_SOURCES_FOLDER
+    replaceParamsValuesInSTWTest
 } from '../utils/files.js';
 import OctaneTest from '../model/octane/octaneTest.js';
-import {
-    deserializeSourceControlDetails,
-    getAppModuleBySourceType,
-    getOctaneTestByName
-} from '../utils/octaneClient.js';
+import {deserializeSourceControlDetails, getAppModuleBySourceType, getOctaneTestByName} from '../utils/octaneClient.js';
 import {TestFields} from '../model/testFields.js';
 import OctaneApplicationModule from '../model/octane/octaneApplicationModule';
 import path from 'node:path';
@@ -65,12 +60,10 @@ const generateExecutableFile = async (
         stwProfile.STWUser = STWCredentials?.username;
         stwProfile.STWPassword = STWCredentials?.password;
 
-        const rootWorkingFolder = `${ROOT_SOURCES_FOLDER}/source_control_${stwProfile.id}`;
         const timestamp: string = format(Date.now(), 'yyyy-mm-dd_HH-MM-ss-ll');
         const environmentParams = getEnvironmentVariables();
-        fs.mkdirSync(rootWorkingFolder, {recursive: true});
 
-        await stwProfile.fetchResources(rootWorkingFolder);
+        await stwProfile.fetchResources();
 
         let parameters: Map<string, string>[] = await getTestParameters(test, testContainerAppModule, suiteId,
             suiteRunId, timestamp, stwProfile);
@@ -101,7 +94,7 @@ const generateExecutableFile = async (
 };
 
 const getCommand = async (
-    STWProfile: STWProfile,
+    stwProfile: STWProfile,
     octaneTest: OctaneTest,
     parameters: Map<string, string>,
     timestamp: string,
@@ -116,15 +109,15 @@ const getCommand = async (
         commandArray.push()
     } else {
         commandArray.push('-createdsn');
-        const STWDatabaseEncryptedXmlAbsolutePath = path.resolve(`${ROOT_SOURCES_FOLDER}/source_control_${STWProfile.id}/TP.xml`);
+        const STWDatabaseEncryptedXmlAbsolutePath = path.resolve(`${stwProfile.getRootWorkingFolder()}/TP.xml`);
         commandArray.push(`"${STWDatabaseEncryptedXmlAbsolutePath}"`)
     }
 
-    if (STWProfile.STWUser) {
+    if (stwProfile.STWUser) {
         commandArray.push('-username');
-        commandArray.push(STWProfile.STWUser);
+        commandArray.push(stwProfile.STWUser);
         commandArray.push('-password');
-        commandArray.push(STWProfile.STWPassword!);
+        commandArray.push(stwProfile.STWPassword!);
     }
     commandArray.push('-resultdir');
     commandArray.push(`"${path.resolve(getResultsFolder(octaneTest, timestamp, iterationIndex))}"`);

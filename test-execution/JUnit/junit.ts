@@ -26,7 +26,6 @@ import {
     EXECUTABLE_FILE,
     getEnvironmentVariables,
     getTestParameters,
-    getSourcesFolder,
     getTestNames,
     replaceParametersReferences,
     replaceParamsValuesInJunitTest,
@@ -41,82 +40,53 @@ import OctaneTest from '../model/octane/octaneTest';
 import format from "dateformat";
 import {TestFields} from "../model/testFields.js";
 
-const getCommand = async (
+const getCommand = (
     octaneTestName: string,
     test: OctaneTest,
-    paramsForCommand: string,
-    testContainerAppModule: OctaneApplicationModule,
-    sourceControlProfile: SourceControlProfile | undefined,
     timestamp: string,
     isLastIteration: boolean | undefined,
     iterationIndex: number | undefined,
-    credentials?: Credentials
-): Promise<string> => {
-    const classpath = test.sc_classpath_udf!.replace(/\\/g, '/');
-    let absoluteClasspath;
-    if (sourceControlProfile) {
-        const rootWorkingFolder = getSourcesFolder(test);
-        await sourceControlProfile!.fetchResources(
-            rootWorkingFolder,
-            credentials
-        );
+    paramsForCommand: string,
+    absoluteClasspath: string
+): string => {
+    const commandArray: string[] = [];
 
-        absoluteClasspath = getAbsoluteClasspath(
-            sourceControlProfile!.getAbsoluteWorkingFolderPath(rootWorkingFolder),
-            classpath,
-            sourceControlProfile.WorkingFolder
-        );
-    } else {
-        absoluteClasspath = getAbsoluteClasspath('', classpath, undefined);
-    }
     const methodName = test.sc_method_name_udf;
     const classNames = test.sc_class_names_udf;
-
     const javaExecutablePath = getJavaExecutablePath(test);
     const jvmOptions = getJVMOptions(test);
 
-    return createCommand(
-        methodName,
-        octaneTestName,
-        classNames,
-        absoluteClasspath,
-        paramsForCommand,
-        timestamp,
-        isLastIteration,
-        iterationIndex,
-        javaExecutablePath,
-        jvmOptions
-    );
-};
+    commandArray.push(`"${javaExecutablePath}"`);
+    commandArray.push(jvmOptions);
+    commandArray.push('-cp');
+    commandArray.push(`"${getRunnerJarAbsolutePath()};${absoluteClasspath}"`);
+    commandArray.push(paramsForCommand);
+    commandArray.push('com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper');
 
-const createCommand = (
-    methodName: string | null | undefined,
-    octaneTestName: string,
-    classNames: string | null | undefined,
-    absoluteClasspath: string,
-    paramsForCommand: string,
-    timestamp: string,
-    isLastIteration: boolean | undefined,
-    iterationIndex:number | undefined,
-    javaPath: string,
-    jvmOptions: string
-): string => {
-    //the command should always be in one line
-    let command;
     if (!methodName && !classNames) {
-        command = `"${javaPath}" ${jvmOptions} -cp "${getRunnerJarAbsolutePath()};${absoluteClasspath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper RunMeAsAJar null "${octaneTestName}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
-    } else if (!methodName && classNames && classNames.split(' ').length > 0) {
-        command = `"${javaPath}" ${jvmOptions} -cp "${getRunnerJarAbsolutePath()};${absoluteClasspath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper "${classNames}" null "${octaneTestName}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
-    } else if (methodName && classNames && classNames.split(' ').length > 0) {
-        command = `"${javaPath}" ${jvmOptions} -cp "${getRunnerJarAbsolutePath()};${absoluteClasspath}" ${paramsForCommand} com.microfocus.adm.almoctane.migration.plugin_silk_central.junit.JUnitCmdLineWrapper "${classNames}" "${methodName}" "${octaneTestName}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''}`;
+        commandArray.push('RunMeAsAJar null');
+    } else if (classNames && classNames.split(' ').length > 0) {
+        commandArray.push(`"${classNames}"`);
+        if (methodName) {
+            commandArray.push(`"${methodName}"`);
+        } else {
+            commandArray.push('null');
+        }
     } else {
         throw new Error(
             'Could not create execution command for Octane automated test of type JUnit with name' +
                 octaneTestName
         );
     }
+    commandArray.push(octaneTestName);
+    commandArray.push(timestamp);
 
-    return command;
+    if (isLastIteration !== undefined && iterationIndex !== undefined) {
+        commandArray.push(String(isLastIteration));
+        commandArray.push(iterationIndex.toString());
+    }
+
+    return commandArray.join(' ');
 };
 
 const generateExecutableFile = async (
@@ -177,16 +147,27 @@ const generateExecutableFile = async (
                 isLastIteration = i == iterationsWithReplacedParams.length - 1;
                 iterationIndex = i;
             }
-            const command = await getCommand(
+            const classpath = testWithParams.sc_classpath_udf!.replace(/\\/g, '/');
+            let absoluteClasspath;
+            if (sourceControlProfile) {
+                await sourceControlProfile!.fetchResources(credentials);
+                absoluteClasspath = getAbsoluteClasspath(
+                    sourceControlProfile!.getAbsoluteWorkingFolderPath(),
+                    classpath,
+                    sourceControlProfile.WorkingFolder
+                );
+            } else {
+                absoluteClasspath = getAbsoluteClasspath('', classpath, undefined);
+            }
+
+            const command = getCommand(
                 testName,
                 testWithParams,
-                iteration.get('parametersForJavaCommand')!,
-                testContainerAppModule,
-                sourceControlProfile,
                 timestamp,
                 isLastIteration,
                 iterationIndex,
-                credentials
+                iteration.get('parametersForJavaCommand')!,
+                absoluteClasspath
             );
 
             fs.appendFileSync(EXECUTABLE_FILE, command + '\n');

@@ -55,11 +55,7 @@ const createResources = async (
             );
 
         if (sourceControlProfile) {
-            const rootWorkingFolder = `${ROOT_SOURCES_FOLDER}/source_control_${sourceControlProfile.id}`;
-            await sourceControlProfile!.fetchResources(
-                rootWorkingFolder,
-                credentials
-            );
+            await sourceControlProfile!.fetchResources(credentials);
         }
     }
 }

@@ -45,15 +45,12 @@ export default class GitProfile extends SourceControlProfile {
         return this._url.replace(/\\/g, '/');
     }
 
-    fetchResources(
-        rootWorkingFolder: string,
-        credentials: Credentials
-    ): void {
-        if (!fs.existsSync(rootWorkingFolder)) {
-            gitClone(this._url, rootWorkingFolder, credentials);
+    fetchResources(credentials: Credentials): void {
+        if (!fs.existsSync(this.getRootWorkingFolder())) {
+            gitClone(this._url, this.getRootWorkingFolder(), credentials);
         }
 
-        cd(rootWorkingFolder);
+        cd(this.getRootWorkingFolder());
 
         const branchName = this.branch;
         if (branchName) {
@@ -76,9 +73,9 @@ export default class GitProfile extends SourceControlProfile {
         cd('../..');
     }
 
-    getAbsoluteWorkingFolderPath(rootWorkingFolder: string): string {
+    getAbsoluteWorkingFolderPath(): string {
         return path.resolve(
-            `${rootWorkingFolder}/${this._projectPath}/${this._rootNode}`
+            `${this.getRootWorkingFolder()}/${this._projectPath}/${this._rootNode}`
         );
     }
 }

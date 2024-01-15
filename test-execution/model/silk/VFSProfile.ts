@@ -39,21 +39,18 @@ export default class VFSProfile extends SourceControlProfile {
         this._url = url;
     }
 
-    async fetchResources(
-        rootWorkingFolder: string,
-        credentials?: Credentials
-    ): Promise<void> {
+    async fetchResources(credentials?: Credentials): Promise<void> {
         if (this._url.startsWith('smb:')) {
             const url = this._url.split('smb:')[1];
-            fs.copySync(`${url}`, `${rootWorkingFolder}`, {overwrite: true});
+            fs.copySync(`${url}`, `${this.getRootWorkingFolder()}`, {overwrite: true});
         } else {
             if (this._url.startsWith('zip:http')) {
                 let zipUrl = this._url.split('zip:')[1];
                 const zipName = zipUrl.substring(zipUrl.lastIndexOf('/') + 1);
-                fs.mkdirSync(rootWorkingFolder, {recursive: true});
+                fs.mkdirSync(this.getRootWorkingFolder(), {recursive: true});
 
                 const res = await axios.get(zipUrl, {responseType: 'stream' });
-                const fileStream = fs.createWriteStream(`${rootWorkingFolder}/${zipName}`);
+                const fileStream = fs.createWriteStream(`${this.getRootWorkingFolder()}/${zipName}`);
                 try {
                     await new Promise((resolve, reject) => {
 
@@ -64,15 +61,15 @@ export default class VFSProfile extends SourceControlProfile {
                 } catch(err) {
                     console.log(err)
                 }
-                const zip = new AdmZip(`./${rootWorkingFolder}/${zipName}`);
-                zip.extractAllTo(rootWorkingFolder , true);
+                const zip = new AdmZip(`./${this.getRootWorkingFolder()}/${zipName}`);
+                zip.extractAllTo(this.getRootWorkingFolder() , true);
             }
         }
     }
 
-    getAbsoluteWorkingFolderPath(rootWorkingFolder: string): string {
+    getAbsoluteWorkingFolderPath(): string {
         return path.resolve(
-            `${rootWorkingFolder}/${this._projectPath}/${this._rootNode}`
+            `${this.getRootWorkingFolder()}/${this._projectPath}/${this._rootNode}`
         );
     }
 }

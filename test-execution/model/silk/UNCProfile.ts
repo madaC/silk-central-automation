@@ -33,14 +33,11 @@ export default class UNCProfile extends SourceControlProfile {
         this.UNCPath = UNCPath;
     }
 
-    fetchResources(
-        rootWorkingFolder: string,
-        credentials?: Credentials
-    ): void {
-        fs.copySync(this.UNCPath, `${rootWorkingFolder}`, { overwrite: true });
+    fetchResources(credentials?: Credentials): void {
+        fs.copySync(this.UNCPath, this.getRootWorkingFolder(), { overwrite: true });
     }
 
-    getAbsoluteWorkingFolderPath(rootWorkingFolder: string): string {
-        return path.resolve(`${rootWorkingFolder}/${this._rootNode}`);
+    getAbsoluteWorkingFolderPath(): string {
+        return path.resolve(`${this.getRootWorkingFolder()}/${this._rootNode}`);
     }
 }

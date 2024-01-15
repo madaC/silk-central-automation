@@ -121,7 +121,7 @@ export default class STWProfile extends SourceControlProfile {
         this._STWPassword = value;
     }
 
-    fetchResources(rootWorkingFolder: string, credentials?: Credentials): void {
+    fetchResources(credentials?: Credentials): void {
         const xmlBuilder = new xml2js.Builder();
         const STWDatabase = {
             TPDatabase: {
@@ -139,13 +139,14 @@ export default class STWProfile extends SourceControlProfile {
         const STWDatabaseXML = xmlBuilder.buildObject(STWDatabase);
         const STWDatabaseXMLEncrypted = encrypt(STWDatabaseXML);
 
+        fs.mkdirSync(this.getRootWorkingFolder(), {recursive: true});
         fs.writeFileSync(
-            `${rootWorkingFolder}/TP.xml`,
+            `${this.getRootWorkingFolder()}/TP.xml`,
             STWDatabaseXMLEncrypted
         );
     }
 
-    getAbsoluteWorkingFolderPath(rootWorkingFolder: string): string {
-       return path.resolve(rootWorkingFolder);
+    getAbsoluteWorkingFolderPath(): string {
+       return path.resolve(this.getRootWorkingFolder());
     }
 }

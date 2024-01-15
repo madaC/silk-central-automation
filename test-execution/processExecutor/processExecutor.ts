@@ -91,13 +91,41 @@ const getCommand = async (
     octaneTestName: string,
     test: OctaneTest,
     timestamp: string,
-    isLastIteration: boolean |undefined,
-    iterationIndex: number |undefined
+    isLastIteration: boolean | undefined,
+    iterationIndex: number | undefined
 ): Promise<string> => {
+    const commandArray: string[] = [];
+
+    commandArray.push('java');
+    commandArray.push('-cp');
+    commandArray.push(`"${getRunnerJarAbsolutePath()}"`);
+    commandArray.push('com.microfocus.adm.almoctane.migration.plugin_silk_central.process.executor.ProcessExecutor');
+
     if (test.sc_working_folder_udf && path.isAbsolute(test.sc_working_folder_udf)) {
-        return `java -cp "${getRunnerJarAbsolutePath()}" com.microfocus.adm.almoctane.migration.plugin_silk_central.process.executor.ProcessExecutor "${test.sc_working_folder_udf}" "${test.name}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''} ${test.sc_executable_name_udf?.replace(/"/g, '\\"')} ${test.sc_argument_list_udf?.replace(/"/g, '\\"') ?? ''}`;
+        commandArray.push(test.sc_working_folder_udf);
+    } else {
+        commandArray.push('null');
     }
-    return `java -cp "${getRunnerJarAbsolutePath()}" com.microfocus.adm.almoctane.migration.plugin_silk_central.process.executor.ProcessExecutor null "${test.name}" ${timestamp} ${isLastIteration ?? ''} ${iterationIndex ?? ''} ${test.sc_executable_name_udf?.replace(/"/g,'\\"')} ${test.sc_argument_list_udf?.replace(/"/g, '\\"') ?? ''}`;
+
+    commandArray.push(test.name);
+    commandArray.push(timestamp);
+
+    if (isLastIteration !== undefined && iterationIndex !== undefined) {
+        commandArray.push(String(isLastIteration));
+        commandArray.push(iterationIndex.toString());
+    }
+    commandArray.push(test.sc_executable_name_udf.replace(/"/g, '\\"'));
+
+    if (test.sc_argument_list_udf) {
+        const lines: string[] = test.sc_argument_list_udf
+            .replace(/"/g, '\\"')
+            .split('\n');
+        for (const line of lines) {
+            commandArray.push(line);
+        }
+    }
+
+    return commandArray.join(' ');
 };
 
 const testsToRun = process.argv[2];
