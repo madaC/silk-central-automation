@@ -61,12 +61,12 @@ pipeline{
 
     }
     post {
-        always {
-            node(agentLabel) {
-              cleanWs()
-            }
-            cleanWs()
-        }
+        // always {
+        //     node(agentLabel) {
+        //       cleanWs()
+        //     }
+        //     cleanWs()
+        // }
     }
 
 }
