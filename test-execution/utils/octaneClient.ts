@@ -26,16 +26,24 @@ import OctaneAttachment from '../model/octane/octaneAttachment';
 import OctaneListNode from '../model/octane/octaneListNode';
 import OctaneTestSuite from '../model/octane/octaneTestSuite';
 import STWProfile from '../model/silk/STWProfile.js';
+import {decrypt} from "./security.js";
 
-const properties = PropertiesReader('./octane-details.properties');
+const octaneProperties = PropertiesReader('./octane-details.properties');
+
+let decryptedUser;
+let decryptedPassword;
+if (octaneProperties.get('user') && octaneProperties.get('password')) {
+    decryptedUser = decrypt(octaneProperties.get('user')!.toString().substring("ENCR:".length), 'aes192', new Int8Array(16), Buffer.from('migrationSecretKey192bit'))
+    decryptedPassword = decrypt(octaneProperties.get('password')!.toString().substring("ENCR:".length), 'aes192', new Int8Array(16), Buffer.from('migrationSecretKey192bit'))
+}
 const octane = new Octane({
-    server: properties.get('octane-url')?.toString() || '',
+    server: octaneProperties.get('octane-url')?.toString() || '',
     sharedSpace: Number.parseInt(
-        properties.get('sharedspace')?.toString() || ''
+        octaneProperties.get('sharedspace')?.toString() || ''
     ),
-    workspace: Number.parseInt(properties.get('workspace')?.toString() || ''),
-    user: properties.get('user')?.toString() || '',
-    password: properties.get('password')?.toString() || ''
+    workspace: Number.parseInt(octaneProperties.get('workspace')?.toString() || ''),
+    user: decryptedUser || '',
+    password: decryptedPassword || ''
 });
 
 const getOctaneTestByName = async (
@@ -379,5 +387,6 @@ export {
     getAttachmentContentByName,
     getAttachmentContentById,
     getTestSuiteById,
-    getOctaneTestByName
+    getOctaneTestByName,
+    octaneProperties
 };

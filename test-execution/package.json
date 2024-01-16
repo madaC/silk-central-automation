@@ -13,7 +13,8 @@
     "start-uft": "node dist/UFT/uft.js",
     "start-stw": "node dist/silkTestWorkbench/stw.js",
     "start-init-execution-keywords": "node dist/executionKeywordsLabels.js",
-    "start-test-results-conversion": "node dist/silkTestWorkbench/testResultsConversion.js"
+    "start-test-results-conversion": "node dist/silkTestWorkbench/testResultsConversion.js",
+    "encrypt-octane-credentials": "node dist/octaneCredentialsEncryptor.js"
   },
   "keywords": [],
   "author": "",
