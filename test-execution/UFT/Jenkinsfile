@@ -58,13 +58,13 @@ pipeline{
         }
 
     }
-    // post {
-    //     always {
-    //         node(agentLabel) {
-    //             cleanWs()
-    //         }
-    //         cleanWs()
-    //     }
-    // }
+    post {
+        always {
+            node(agentLabel) {
+                cleanWs()
+            }
+            cleanWs()
+        }
+    }
 
 }
