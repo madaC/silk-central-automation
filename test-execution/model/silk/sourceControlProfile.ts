@@ -50,6 +50,6 @@ export default abstract class SourceControlProfile {
     }
 
     getRootWorkingFolder = (): string => {
-        return `${ROOT_SOURCES_FOLDER}/SourceControlProfile_${this.id}`;
+        return `${ROOT_SOURCES_FOLDER}/source_control_${this.id}`;
     };
 }
