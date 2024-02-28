@@ -97,8 +97,7 @@ const createCommand = async (
     const commandArray: string[] = [];
     commandArray.push(`"${nunitDirectory}"`)
     commandArray.push(nunitOptions)
-    commandArray.push(`--result="${outputFilePath}";`)
-    commandArray.push(`transform="./nunit3-junit.xslt"`)
+    commandArray.push(`--result="${outputFilePath}";transform="./nunit3-junit.xslt"`)
     commandArray.push(`"${dllPath}"`)
 
     return commandArray.join(' ');
