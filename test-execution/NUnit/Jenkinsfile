@@ -9,7 +9,7 @@ pipeline{
         string(name: 'testsToRun', description: '' )
         string(name: 'testsToRunConverted',description: '' )
         string(name: 'nunit2',defaultValue: 'C:\\NUnitExecution\\NUnit-2.7.1\\bin\\nunit-console.exe',description: '' )
-        string(name: 'nunit3',defaultValue: 'C:\\NUnitExecution\\Nunit3\\nunit3-console.exe' )
+        string(name: 'nunit3',defaultValue: 'C:\\NUnitExecution\\Nunit3\\nunit3-console.exe',description: '' )
         string(name: 'suiteId',description: '' )
         string(name: 'suiteRunId',description: '' )
     }
